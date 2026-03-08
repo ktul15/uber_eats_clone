@@ -5,6 +5,18 @@ This document outlines the development phases, milestones, and subtasks for the 
 
 ---
 
+## Strict Git Workflow
+We adhere to the following git workflow throughout development:
+- **`master` branch**: Production-ready state.
+- **`dev` branch**: Active development and integration branch.
+- **Feature branches**: Always branch off from `dev` for every issue (e.g., `feature/issue-1-ci-cd`).
+- **Merge Process**: 
+  1. Finish issue development on the feature branch.
+  2. Merge the feature branch into `dev`.
+  3. Merge `dev` into `master` ONLY upon completing an entire phase.
+
+---
+
 ## Phases & Milestones
 
 ### Phase 1: Project Setup & System Architecture
