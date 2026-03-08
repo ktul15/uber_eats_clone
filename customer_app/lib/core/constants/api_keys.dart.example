@@ -1,0 +1,6 @@
+class ApiKeys {
+  /// The Google Maps API key required for Places API, Directions API, and SDKs.
+  /// Replace this string with the actual API key generated from Google Cloud Console.
+  /// **IMPORTANT:** NEVER commit the actual key to version control. Keep it in a `.env` file for production or replace locally.
+  static const String googleMapsApiKey = 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
+}
