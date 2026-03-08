@@ -1,14 +1,154 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// -------------------------------------------------------------------------
+// ENUMS
+// -------------------------------------------------------------------------
+
+enum Role {
+  CUSTOMER
+  OWNER
+  DRIVER
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY
+  PICKED_UP
+  DELIVERED
+  CANCELLED
+}
+
+enum DeliveryStatus {
+  ASSIGNED
+  AT_RESTAURANT
+  IN_TRANSIT
+  COMPLETED
+}
+
+// -------------------------------------------------------------------------
+// USER & PROFILES
+// -------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  phone        String?  @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customerProfile CustomerProfile?
+  driverProfile   DriverProfile?
+  restaurants     Restaurant[]
+}
+
+model CustomerProfile {
+  id               String  @id @default(uuid())
+  userId           String  @unique
+  name             String
+  defaultAddress   String?
+  stripeCustomerId String? @unique
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
+}
+
+model DriverProfile {
+  id            String  @id @default(uuid())
+  userId        String  @unique
+  name          String
+  vehicleType   String?
+  licenseNumber String?
+  isAvailable   Boolean @default(false)
+  currentLat    Float?
+  currentLng    Float?
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries Delivery[]
+}
+
+// -------------------------------------------------------------------------
+// RESTAURANT & MENU
+// -------------------------------------------------------------------------
+
+model Restaurant {
+  id          String  @id @default(uuid())
+  ownerId     String
+  name        String
+  description String?
+  address     String
+  lat         Float?
+  lng         Float?
+  isActive    Boolean @default(false)
+  rating      Float   @default(0.0)
+
+  owner     User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  menuItems MenuItem[]
+  orders    Order[]
+}
+
+model MenuItem {
+  id           String  @id @default(uuid())
+  restaurantId String
+  name         String
+  description  String?
+  price        Decimal @db.Decimal(10, 2)
+  imageUrl     String?
+  isAvailable  Boolean @default(true)
+
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+}
+
+// -------------------------------------------------------------------------
+// ORDERS & DELIVERIES
+// -------------------------------------------------------------------------
+
+model Order {
+  id              String      @id @default(uuid())
+  customerId      String
+  restaurantId    String
+  status          OrderStatus @default(PENDING)
+  totalAmount     Decimal     @db.Decimal(10, 2)
+  deliveryAddress String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  customer   CustomerProfile @relation(fields: [customerId], references: [id])
+  restaurant Restaurant      @relation(fields: [restaurantId], references: [id])
+  orderItems OrderItem[]
+  delivery   Delivery?
+}
+
+model OrderItem {
+  id          String  @id @default(uuid())
+  orderId     String
+  menuItemId  String
+  quantity    Int     @default(1)
+  priceAtTime Decimal @db.Decimal(10, 2)
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+model Delivery {
+  id                   String         @id @default(uuid())
+  orderId              String         @unique
+  driverId             String
+  status               DeliveryStatus @default(ASSIGNED)
+  estimatedArrivalTime DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  order  Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  driver DriverProfile @relation(fields: [driverId], references: [id])
 }
