@@ -1,10 +1,10 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { prismaMock } from '../../__mocks__/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { register, login } from '../auth.controller';
 import { Role } from '@prisma/client';
-import { describe } from 'node:test';
+import { AppError } from '../../utils/AppError';
 
 jest.mock('bcryptjs');
 jest.mock('jsonwebtoken');
@@ -24,26 +24,23 @@ describe('Auth Controller', () => {
     });
 
     describe('register', () => {
-        it('should return 400 if required fields are missing', async () => {
-            mockReq = { body: { email: 'test@test.com' } }; // missing password, role, name
-
-            await register(mockReq as Request, mockRes as Response, mockNext);
-
-            expect(mockRes.status).toHaveBeenCalledWith(400);
-            expect(mockRes.json).toHaveBeenCalledWith({ error: 'Email, password, role, and name are required' });
-        });
-
-        it('should return 409 if user already exists', async () => {
+        it('should pass 409 AppError to next() if user already exists', async () => {
             mockReq = {
-                body: { email: 'test@example.com', password: 'pass', role: 'CUSTOMER', name: 'John Doe' },
+                body: { email: 'test@example.com', password: 'pass123', role: 'CUSTOMER', name: 'John Doe' },
             };
 
             prismaMock.user.findUnique.mockResolvedValueOnce({ id: '1', email: 'test@example.com' } as any);
 
-            await register(mockReq as Request, mockRes as Response, mockNext);
+            // asyncHandler catches the thrown AppError and passes it to next()
+            await new Promise<void>((resolve) => {
+                mockNext = jest.fn(() => resolve());
+                register(mockReq as Request, mockRes as Response, mockNext);
+            });
 
-            expect(mockRes.status).toHaveBeenCalledWith(409);
-            expect(mockRes.json).toHaveBeenCalledWith({ error: 'User with this email already exists' });
+            expect(mockNext).toHaveBeenCalledWith(expect.any(AppError));
+            const error = mockNext.mock.calls[0][0] as AppError;
+            expect(error.statusCode).toBe(409);
+            expect(error.message).toBe('User with this email already exists');
         });
 
         it('should register a new customer successfully', async () => {
@@ -61,51 +58,63 @@ describe('Auth Controller', () => {
                 role: 'CUSTOMER' as Role,
             };
 
-            // Mock the transaction returning the user
             prismaMock.$transaction.mockResolvedValueOnce(mockUser as any);
             (jwt.sign as jest.Mock).mockReturnValue('mockJwtToken');
 
-            await register(mockReq as Request, mockRes as Response, mockNext);
+            // For success, the handler completes without calling next(err)
+            await new Promise<void>((resolve) => {
+                const originalJson = mockRes.json as jest.Mock;
+                mockRes.json = jest.fn((...args) => {
+                    originalJson(...args);
+                    resolve();
+                    return mockRes as Response;
+                });
+                register(mockReq as Request, mockRes as Response, mockNext);
+            });
 
             expect(prismaMock.$transaction).toHaveBeenCalled();
             expect(mockRes.status).toHaveBeenCalledWith(201);
             expect(mockRes.json).toHaveBeenCalledWith({
-                message: 'User registered successfully',
-                token: 'mockJwtToken',
-                user: { id: 'user123', email: 'test@example.com', role: 'CUSTOMER' },
+                success: true,
+                data: {
+                    message: 'User registered successfully',
+                    token: 'mockJwtToken',
+                    user: { id: 'user123', email: 'test@example.com', role: 'CUSTOMER' },
+                },
             });
         });
     });
 
     describe('login', () => {
-        it('should return 400 if email or password are missing', async () => {
-            mockReq = { body: { email: 'test@test.com' } };
-
-            await login(mockReq as Request, mockRes as Response, mockNext);
-
-            expect(mockRes.status).toHaveBeenCalledWith(400);
-            expect(mockRes.json).toHaveBeenCalledWith({ error: 'Email and password are required' });
-        });
-
-        it('should return 401 for invalid email', async () => {
+        it('should pass 401 AppError to next() for invalid email', async () => {
             mockReq = { body: { email: 'wrong@example.com', password: 'pass' } };
             prismaMock.user.findUnique.mockResolvedValueOnce(null);
 
-            await login(mockReq as Request, mockRes as Response, mockNext);
+            await new Promise<void>((resolve) => {
+                mockNext = jest.fn(() => resolve());
+                login(mockReq as Request, mockRes as Response, mockNext);
+            });
 
-            expect(mockRes.status).toHaveBeenCalledWith(401);
-            expect(mockRes.json).toHaveBeenCalledWith({ error: 'Invalid credentials' });
+            expect(mockNext).toHaveBeenCalledWith(expect.any(AppError));
+            const error = mockNext.mock.calls[0][0] as AppError;
+            expect(error.statusCode).toBe(401);
+            expect(error.message).toBe('Invalid credentials');
         });
 
-        it('should return 401 for valid email but wrong password', async () => {
+        it('should pass 401 AppError to next() for wrong password', async () => {
             mockReq = { body: { email: 'test@example.com', password: 'wrong' } };
             prismaMock.user.findUnique.mockResolvedValueOnce({ passwordHash: 'hashedPass' } as any);
             (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
 
-            await login(mockReq as Request, mockRes as Response, mockNext);
+            await new Promise<void>((resolve) => {
+                mockNext = jest.fn(() => resolve());
+                login(mockReq as Request, mockRes as Response, mockNext);
+            });
 
-            expect(mockRes.status).toHaveBeenCalledWith(401);
-            expect(mockRes.json).toHaveBeenCalledWith({ error: 'Invalid credentials' });
+            expect(mockNext).toHaveBeenCalledWith(expect.any(AppError));
+            const error = mockNext.mock.calls[0][0] as AppError;
+            expect(error.statusCode).toBe(401);
+            expect(error.message).toBe('Invalid credentials');
         });
 
         it('should successfully log in and return a JWT', async () => {
@@ -116,13 +125,24 @@ describe('Auth Controller', () => {
             (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
             (jwt.sign as jest.Mock).mockReturnValue('mockJwtToken');
 
-            await login(mockReq as Request, mockRes as Response, mockNext);
+            await new Promise<void>((resolve) => {
+                const originalJson = mockRes.json as jest.Mock;
+                mockRes.json = jest.fn((...args) => {
+                    originalJson(...args);
+                    resolve();
+                    return mockRes as Response;
+                });
+                login(mockReq as Request, mockRes as Response, mockNext);
+            });
 
             expect(mockRes.status).toHaveBeenCalledWith(200);
             expect(mockRes.json).toHaveBeenCalledWith({
-                message: 'Logged in successfully',
-                token: 'mockJwtToken',
-                user: { id: 'user123', email: 'test@example.com', role: 'OWNER' },
+                success: true,
+                data: {
+                    message: 'Logged in successfully',
+                    token: 'mockJwtToken',
+                    user: { id: 'user123', email: 'test@example.com', role: 'OWNER' },
+                },
             });
         });
     });

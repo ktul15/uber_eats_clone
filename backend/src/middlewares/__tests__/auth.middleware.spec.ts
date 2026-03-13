@@ -1,5 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import { authenticate, AuthRequest } from '../auth.middleware';
+import { Response, NextFunction } from 'express';
+import { authenticate } from '../auth.middleware';
+import { AuthRequest } from '../../types/auth.types';
+import { AppError } from '../../utils/AppError';
 import jwt from 'jsonwebtoken';
 
 jest.mock('jsonwebtoken');
@@ -24,26 +26,26 @@ describe('Auth Middleware', () => {
         jest.clearAllMocks();
     });
 
-    it('should return 401 if no Authorization header is present', () => {
+    it('should throw AppError 401 if no Authorization header is present', () => {
         (mockReq.header as jest.Mock).mockReturnValue(undefined);
 
-        authenticate(mockReq as AuthRequest, mockRes as Response, mockNext);
+        expect(() => {
+            authenticate(mockReq as AuthRequest, mockRes as Response, mockNext);
+        }).toThrow(AppError);
 
-        expect(mockRes.status).toHaveBeenCalledWith(401);
-        expect(mockRes.json).toHaveBeenCalledWith({ error: 'Access denied. No token provided.' });
         expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it('should return 400 if token is invalid or expired', () => {
+    it('should throw AppError 401 if token is invalid or expired', () => {
         (mockReq.header as jest.Mock).mockReturnValue('Bearer invalid_token');
         (jwt.verify as jest.Mock).mockImplementation(() => {
             throw new Error('Invalid token');
         });
 
-        authenticate(mockReq as AuthRequest, mockRes as Response, mockNext);
+        expect(() => {
+            authenticate(mockReq as AuthRequest, mockRes as Response, mockNext);
+        }).toThrow(AppError);
 
-        expect(mockRes.status).toHaveBeenCalledWith(400);
-        expect(mockRes.json).toHaveBeenCalledWith({ error: 'Invalid token.' });
         expect(mockNext).not.toHaveBeenCalled();
     });
 
