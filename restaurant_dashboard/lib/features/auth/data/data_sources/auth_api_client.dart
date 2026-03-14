@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:customer_app/features/auth/data/models/auth_response_dto.dart';
-import 'package:customer_app/shared/constants/api_constants.dart';
-import 'package:customer_app/shared/constants/user_role.dart';
+import 'package:restaurant_dashboard/features/auth/data/models/auth_response_dto.dart';
+import 'package:restaurant_dashboard/shared/constants/api_constants.dart';
+import 'package:restaurant_dashboard/shared/constants/user_role.dart';
 
 class AuthApiClient {
   final Dio _dio;
@@ -19,7 +19,7 @@ class AuthApiClient {
       data: {
         'email': email,
         'password': password,
-        'role': UserRole.customer.value,
+        'role': UserRole.owner.value,
         'name': name,
         // ignore: use_null_aware_elements
         if (phone != null) 'phone': phone,
