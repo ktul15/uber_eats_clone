@@ -37,7 +37,12 @@ export const register = asyncHandler(async (req: Request, res: Response): Promis
                 data: { userId: user.id, name },
             });
         } else if (role === 'DRIVER') {
+            const { vehicleType, licenseNumber } = req.body;
             await tx.driverProfile.create({
+                data: { userId: user.id, name, vehicleType, licenseNumber },
+            });
+        } else if (role === 'OWNER') {
+            await tx.ownerProfile.create({
                 data: { userId: user.id, name },
             });
         }

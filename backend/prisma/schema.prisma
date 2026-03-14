@@ -48,6 +48,7 @@ model User {
 
   customerProfile CustomerProfile?
   driverProfile   DriverProfile?
+  ownerProfile    OwnerProfile?
   restaurants     Restaurant[]
 }
 
@@ -74,6 +75,14 @@ model DriverProfile {
 
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   deliveries Delivery[]
+}
+
+model OwnerProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  name   String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // -------------------------------------------------------------------------

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:restaurant_dashboard/app/routes.dart';
 import 'package:restaurant_dashboard/features/auth/presentation/screens/login_screen.dart';
 import 'package:restaurant_dashboard/features/auth/presentation/screens/register_screen.dart';
+import 'package:restaurant_dashboard/features/profile/presentation/screens/profile_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.login,
@@ -20,9 +21,18 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.home,
       name: AppRoutes.homeName,
-      builder: (context, state) => const Scaffold(
-        body: Center(child: Text('Restaurant Dashboard Home')),
+      builder: (context, state) => Scaffold(
+        body: const Center(child: Text('Restaurant Dashboard Home')),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => context.goNamed(AppRoutes.profileName),
+          child: const Icon(Icons.person),
+        ),
       ),
+    ),
+    GoRoute(
+      path: AppRoutes.profile,
+      name: AppRoutes.profileName,
+      builder: (context, state) => const ProfileScreen(),
     ),
   ],
 );

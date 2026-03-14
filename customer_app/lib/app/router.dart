@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:customer_app/app/routes.dart';
 import 'package:customer_app/features/auth/presentation/screens/login_screen.dart';
 import 'package:customer_app/features/auth/presentation/screens/register_screen.dart';
+import 'package:customer_app/features/profile/presentation/screens/profile_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.login,
@@ -20,8 +21,18 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.home,
       name: AppRoutes.homeName,
-      builder: (context, state) =>
-          const Scaffold(body: Center(child: Text('Customer Home'))),
+      builder: (context, state) => Scaffold(
+        body: const Center(child: Text('Customer App Home')),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => context.goNamed(AppRoutes.profileName),
+          child: const Icon(Icons.person),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.profile,
+      name: AppRoutes.profileName,
+      builder: (context, state) => const ProfileScreen(),
     ),
   ],
 );
