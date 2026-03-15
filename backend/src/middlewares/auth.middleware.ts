@@ -22,3 +22,12 @@ export const authenticate = (req: AuthRequest, _res: Response, next: NextFunctio
         throw AppError.unauthorized('Invalid or expired token.');
     }
 };
+
+export const requireRole = (roles: string[]) => {
+    return (req: AuthRequest, _res: Response, next: NextFunction): void => {
+        if (!req.user || !roles.includes(req.user.role)) {
+            throw AppError.forbidden(`Access denied. Requires one of these roles: ${roles.join(', ')}`);
+        }
+        next();
+    };
+};
