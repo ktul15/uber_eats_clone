@@ -6,6 +6,8 @@ import 'package:restaurant_dashboard/features/auth/providers/auth_providers.dart
 import 'package:restaurant_dashboard/features/auth/presentation/screens/login_screen.dart';
 import 'package:restaurant_dashboard/features/auth/presentation/screens/register_screen.dart';
 import 'package:restaurant_dashboard/features/profile/presentation/screens/profile_screen.dart';
+import 'package:restaurant_dashboard/features/menu/presentation/screens/home_dashboard_screen.dart';
+import 'package:restaurant_dashboard/features/menu/presentation/screens/menu_management_screen.dart';
 
 part 'router.g.dart';
 
@@ -49,13 +51,15 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.home,
         name: AppRoutes.homeName,
-        builder: (context, state) => Scaffold(
-          body: const Center(child: Text('Restaurant Dashboard Home')),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => context.goNamed(AppRoutes.profileName),
-            child: const Icon(Icons.person),
-          ),
-        ),
+        builder: (context, state) => const HomeDashboardScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.menu,
+        name: AppRoutes.menuName,
+        builder: (context, state) {
+          final restaurantId = state.pathParameters['restaurantId']!;
+          return MenuManagementScreen(restaurantId: restaurantId);
+        },
       ),
       GoRoute(
         path: AppRoutes.profile,
