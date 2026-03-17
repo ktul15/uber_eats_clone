@@ -102,4 +102,36 @@ class MenuRepository {
       menuItemId: menuItemId,
     );
   }
+
+  Future<Restaurant> updateRestaurant({
+    required String restaurantId,
+    required Map<String, dynamic> payload,
+  }) async {
+    final dto = await _apiClient.updateRestaurant(
+      restaurantId: restaurantId,
+      payload: payload,
+    );
+
+    return Restaurant(
+      id: dto.id,
+      ownerId: dto.ownerId,
+      name: dto.name,
+      isActive: dto.isActive,
+      description: dto.description,
+      address: dto.address,
+      menuItems: dto.menuItems
+          .map(
+            (itemDto) => MenuItem(
+              id: itemDto.id,
+              restaurantId: itemDto.restaurantId,
+              name: itemDto.name,
+              price: itemDto.price,
+              isAvailable: itemDto.isAvailable,
+              description: itemDto.description,
+              imageUrl: itemDto.imageUrl,
+            ),
+          )
+          .toList(),
+    );
+  }
 }

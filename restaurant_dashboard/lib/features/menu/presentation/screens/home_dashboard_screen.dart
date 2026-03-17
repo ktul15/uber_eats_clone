@@ -73,28 +73,35 @@ class HomeDashboardScreen extends ConsumerWidget {
                                 ),
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSizes.p12,
-                                vertical: AppSizes.p4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: restaurant.isActive
-                                    ? AppColors.success.withValues(alpha: 0.1)
-                                    : AppColors.error.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(
-                                  AppSizes.radiusS,
+                            Row(
+                              children: [
+                                Text(
+                                  restaurant.isActive ? 'Active' : 'Inactive',
+                                  style: TextStyle(
+                                    color: restaurant.isActive
+                                        ? AppColors.success
+                                        : AppColors.error,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              child: Text(
-                                restaurant.isActive ? 'Active' : 'Inactive',
-                                style: TextStyle(
-                                  color: restaurant.isActive
-                                      ? AppColors.success
-                                      : AppColors.error,
-                                  fontWeight: FontWeight.bold,
+                                const SizedBox(width: AppSizes.p8),
+                                Switch(
+                                  value: restaurant.isActive,
+                                  activeThumbColor: AppColors.success,
+                                  inactiveThumbColor: AppColors.error,
+                                  onChanged: (value) {
+                                    ref
+                                        .read(
+                                          myRestaurantsControllerProvider
+                                              .notifier,
+                                        )
+                                        .updateRestaurantStatus(
+                                          restaurant.id,
+                                          value,
+                                        );
+                                  },
                                 ),
-                              ),
+                              ],
                             ),
                           ],
                         ),

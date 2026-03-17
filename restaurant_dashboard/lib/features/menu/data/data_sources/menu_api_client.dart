@@ -84,4 +84,20 @@ class MenuApiClient {
       options: options,
     );
   }
+
+  Future<RestaurantDto> updateRestaurant({
+    required String restaurantId,
+    required Map<String, dynamic> payload,
+  }) async {
+    final options = await _getAuthOptions();
+    final response = await _dio.put(
+      ApiConstants.restaurantById(restaurantId),
+      data: payload,
+      options: options,
+    );
+
+    return RestaurantDto.fromJson(
+      (response.data as Map<String, dynamic>)["data"],
+    );
+  }
 }

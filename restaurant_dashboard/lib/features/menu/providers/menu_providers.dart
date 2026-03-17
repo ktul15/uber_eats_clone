@@ -27,6 +27,26 @@ class MyRestaurantsController extends _$MyRestaurantsController {
   FutureOr<List<Restaurant>> build() {
     return ref.watch(menuRepositoryProvider).getMyRestaurants();
   }
+
+  Future<void> updateRestaurantStatus(
+    String restaurantId,
+    bool isActive,
+  ) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final updatedRestaurant = await ref
+          .read(menuRepositoryProvider)
+          .updateRestaurant(
+            restaurantId: restaurantId,
+            payload: {'isActive': isActive},
+          );
+
+      final currentList = state.value ?? [];
+      return currentList
+          .map((res) => res.id == restaurantId ? updatedRestaurant : res)
+          .toList();
+    });
+  }
 }
 
 @riverpod
