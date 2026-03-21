@@ -100,4 +100,22 @@ class MenuApiClient {
       (response.data as Map<String, dynamic>)["data"],
     );
   }
+
+  Future<String> uploadImage(String filePath) async {
+    final options = await _getAuthOptions();
+
+    // Create FormData with the file under the 'image' key
+    final formData = FormData.fromMap({
+      'image': await MultipartFile.fromFile(filePath),
+    });
+
+    final response = await _dio.post(
+      ApiConstants.upload,
+      data: formData,
+      options: options,
+    );
+
+    // Backend returns { success: true, data: { url: ... } }
+    return (response.data as Map<String, dynamic>)['data']['url'] as String;
+  }
 }

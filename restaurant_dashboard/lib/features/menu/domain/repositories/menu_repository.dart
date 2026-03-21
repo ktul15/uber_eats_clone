@@ -18,6 +18,7 @@ class MenuRepository {
             isActive: dto.isActive,
             description: dto.description,
             address: dto.address,
+            imageUrl: dto.imageUrl,
             menuItems: dto.menuItems
                 .map(
                   (itemDto) => MenuItem(
@@ -119,6 +120,7 @@ class MenuRepository {
       isActive: dto.isActive,
       description: dto.description,
       address: dto.address,
+      imageUrl: dto.imageUrl,
       menuItems: dto.menuItems
           .map(
             (itemDto) => MenuItem(
@@ -133,5 +135,9 @@ class MenuRepository {
           )
           .toList(),
     );
+  }
+
+  Future<String> uploadImage(String filePath) async {
+    return _apiClient.uploadImage(filePath);
   }
 }

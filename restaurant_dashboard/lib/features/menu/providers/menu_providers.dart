@@ -47,6 +47,26 @@ class MyRestaurantsController extends _$MyRestaurantsController {
           .toList();
     });
   }
+
+  Future<void> updateRestaurantImage(
+    String restaurantId,
+    String imageUrl,
+  ) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final updatedRestaurant = await ref
+          .read(menuRepositoryProvider)
+          .updateRestaurant(
+            restaurantId: restaurantId,
+            payload: {'imageUrl': imageUrl},
+          );
+
+      final currentList = state.value ?? [];
+      return currentList
+          .map((res) => res.id == restaurantId ? updatedRestaurant : res)
+          .toList();
+    });
+  }
 }
 
 @riverpod
