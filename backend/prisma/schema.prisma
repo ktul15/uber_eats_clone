@@ -97,6 +97,7 @@ model Restaurant {
   address     String
   lat         Float?
   lng         Float?
+  imageUrl    String?
   isActive    Boolean @default(false)
   rating      Float   @default(0.0)
 

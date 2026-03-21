@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:restaurant_dashboard/app/routes.dart';
 import 'package:restaurant_dashboard/features/auth/providers/auth_providers.dart';
 import 'package:restaurant_dashboard/features/menu/providers/menu_providers.dart';
@@ -8,11 +10,64 @@ import 'package:restaurant_dashboard/shared/theme/app_colors.dart';
 import 'package:restaurant_dashboard/shared/theme/app_sizes.dart';
 import 'package:restaurant_dashboard/shared/widgets/app_button.dart';
 
-class HomeDashboardScreen extends ConsumerWidget {
+class HomeDashboardScreen extends ConsumerStatefulWidget {
   const HomeDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeDashboardScreen> createState() =>
+      _HomeDashboardScreenState();
+}
+
+class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
+  Future<void> _uploadCoverImage(String restaurantId) async {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (pickedFile == null) return;
+
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Uploading cover image...')),
+      );
+
+      final uploadedUrl = await ref
+          .read(menuRepositoryProvider)
+          .uploadImage(pickedFile.path);
+
+      await ref
+          .read(myRestaurantsControllerProvider.notifier)
+          .updateRestaurantImage(restaurantId, uploadedUrl);
+
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Cover image updated!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: const Text('Photo library access denied.'),
+            action: SnackBarAction(
+              label: 'Open Settings',
+              onPressed: openAppSettings,
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final restaurantsAsync = ref.watch(myRestaurantsControllerProvider);
     final theme = Theme.of(context);
 
@@ -57,7 +112,44 @@ class HomeDashboardScreen extends ConsumerWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppSizes.radiusL),
                   ),
-                  child: Padding(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Cover Image
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(AppSizes.radiusL),
+                            ),
+                            child: restaurant.imageUrl != null
+                                ? Image.network(
+                                    restaurant.imageUrl!,
+                                    height: 160,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            _CoverImagePlaceholder(
+                                              height: 160,
+                                            ),
+                                  )
+                                : _CoverImagePlaceholder(height: 160),
+                          ),
+                          Positioned(
+                            bottom: AppSizes.p8,
+                            right: AppSizes.p8,
+                            child: FloatingActionButton.small(
+                              heroTag: 'cover_image_upload',
+                              onPressed: () =>
+                                  _uploadCoverImage(restaurant.id),
+                              tooltip: 'Change cover image',
+                              child: const Icon(Icons.camera_alt, size: 18),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Padding(
                     padding: const EdgeInsets.all(AppSizes.p24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,6 +226,8 @@ class HomeDashboardScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: AppSizes.p24),
                 AppButton(
@@ -158,6 +252,22 @@ class HomeDashboardScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CoverImagePlaceholder extends StatelessWidget {
+  final double height;
+
+  const _CoverImagePlaceholder({required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      width: double.infinity,
+      color: AppColors.textSecondary.withValues(alpha: 0.1),
+      child: const Icon(Icons.restaurant, size: 48, color: AppColors.textSecondary),
     );
   }
 }

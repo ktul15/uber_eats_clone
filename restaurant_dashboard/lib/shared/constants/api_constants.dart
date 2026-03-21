@@ -10,6 +10,7 @@ class ApiConstants {
 
   // Restaurant & Menu endpoints
   static const String myRestaurants = '/api/restaurants/owner/my';
+  static const String upload = '/api/upload';
   static String restaurantById(String id) => '/api/restaurants/$id';
   static String restaurantMenu(String id) => '/api/restaurants/$id/menu';
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:restaurant_dashboard/features/menu/domain/models/menu_item.dart';
 import 'package:restaurant_dashboard/features/menu/providers/menu_providers.dart';
 import 'package:restaurant_dashboard/shared/theme/app_sizes.dart';
@@ -148,9 +150,83 @@ class _MenuItemFormDialogState extends ConsumerState<MenuItemFormDialog> {
               },
             ),
             const SizedBox(height: AppSizes.p16),
-            AppTextField(
-              controller: _imageController,
-              labelText: 'Image URL (Optional)',
+            const Text(
+              'Item Image',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: AppSizes.p8),
+            Container(
+              height: 150,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                border: Border.all(color: theme.colorScheme.outline),
+                borderRadius: BorderRadius.circular(AppSizes.radiusM),
+              ),
+              child: _imageController.text.isNotEmpty
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(AppSizes.radiusM),
+                      child: Image.network(
+                        _imageController.text,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Center(
+                              child: Icon(Icons.error, color: Colors.red),
+                            ),
+                      ),
+                    )
+                  : const Center(
+                      child: Icon(Icons.image, size: 40, color: Colors.grey),
+                    ),
+            ),
+            const SizedBox(height: AppSizes.p8),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.upload_file),
+              label: const Text('Select Image'),
+              onPressed: () async {
+                if (!mounted) return;
+                final messenger = ScaffoldMessenger.of(context);
+                try {
+                  final picker = ImagePicker();
+                  final pickedFile = await picker.pickImage(
+                    source: ImageSource.gallery,
+                    imageQuality: 80,
+                  );
+
+                  if (pickedFile == null) return;
+
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('Uploading image...')),
+                  );
+
+                  final uploadedUrl = await ref
+                      .read(menuRepositoryProvider)
+                      .uploadImage(pickedFile.path);
+
+                  if (mounted) {
+                    setState(() {
+                      _imageController.text = uploadedUrl;
+                    });
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Image uploaded successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (_) {
+                  if (mounted) {
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: const Text('Photo library access denied.'),
+                        action: SnackBarAction(
+                          label: 'Open Settings',
+                          onPressed: openAppSettings,
+                        ),
+                      ),
+                    );
+                  }
+                }
+              },
             ),
             const SizedBox(height: AppSizes.p16),
             SwitchListTile(

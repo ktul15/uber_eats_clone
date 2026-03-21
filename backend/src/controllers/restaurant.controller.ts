@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 // CREATE RESTAURANT (OWNER only)
 export const createRestaurant = async (req: AuthRequest, res: Response): Promise<void> => {
-    const { name, description, address, lat, lng } = req.body;
+    const { name, description, address, lat, lng, imageUrl } = req.body;
     const ownerId = req.user?.id;
 
     if (!ownerId) throw AppError.unauthorized('User not found');
@@ -21,6 +21,7 @@ export const createRestaurant = async (req: AuthRequest, res: Response): Promise
             address,
             lat,
             lng,
+            imageUrl,
             isActive: true, // Auto-active for now, can be toggled later
         },
     });
@@ -56,6 +57,7 @@ export const updateRestaurant = async (req: AuthRequest, res: Response): Promise
     const address = req.body.address as string | undefined;
     const lat = req.body.lat as number | null | undefined;
     const lng = req.body.lng as number | null | undefined;
+    const imageUrl = req.body.imageUrl as string | null | undefined;
     const ownerId = req.user?.id;
 
     const restaurant = await prisma.restaurant.findUnique({ where: { id } });
@@ -71,6 +73,7 @@ export const updateRestaurant = async (req: AuthRequest, res: Response): Promise
             address: address !== undefined ? address : restaurant.address,
             lat: lat !== undefined ? lat : restaurant.lat,
             lng: lng !== undefined ? lng : restaurant.lng,
+            imageUrl: imageUrl !== undefined ? imageUrl : restaurant.imageUrl,
             isActive: isActive !== undefined ? isActive : restaurant.isActive,
         },
     });

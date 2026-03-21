@@ -13,6 +13,7 @@ class RestaurantDto extends Equatable {
   final String? address;
   final double? lat;
   final double? lng;
+  final String? imageUrl;
   final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -26,6 +27,7 @@ class RestaurantDto extends Equatable {
     this.address,
     this.lat,
     this.lng,
+    this.imageUrl,
     required this.isActive,
     required this.createdAt,
     required this.updatedAt,
@@ -46,6 +48,7 @@ class RestaurantDto extends Equatable {
     address,
     lat,
     lng,
+    imageUrl,
     isActive,
     createdAt,
     updatedAt,
