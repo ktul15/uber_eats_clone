@@ -107,3 +107,11 @@ Feature branches follow `feature/issue-{N}-{description}`. Commit messages follo
 
 4. **Never merge a feature branch directly into `main`.**
 5. **Never branch off `main` for feature work.**
+6. **After merging a feature branch into `dev`, move the corresponding GitHub issue to "Done" in the GitHub project.**
+   ```bash
+   # Find the project item ID for the issue, then update its status to Done
+   gh project item-list {PROJECT_NUMBER} --owner ktul15 --format json \
+     | jq '.items[] | select(.content.number == {ISSUE_NUMBER}) | .id'
+   gh project item-edit --project-id {PROJECT_ID} --id {ITEM_ID} --field-id {STATUS_FIELD_ID} --single-select-option-id {DONE_OPTION_ID}
+   ```
+   > **Note:** `gh` token must have the `project` scope (`gh auth refresh -s project`) for project board operations.
