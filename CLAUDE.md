@@ -84,3 +84,26 @@ Flutter apps expect `lib/shared/constants/api_keys.dart` (gitignored) for Google
 ## Branch & Issue Conventions
 
 Feature branches follow `feature/issue-{N}-{description}`. Commit messages follow `closes #N: <type>: <description>` format.
+
+## Git Workflow (STRICT — must be followed exactly)
+
+1. **Always branch from `dev`** — never from `main` or another feature branch.
+   ```bash
+   git checkout dev
+   git checkout -b feature/issue-{N}-{description}
+   ```
+
+2. **Merge completed feature branches into `dev`** — never directly into `main`.
+   ```bash
+   git checkout dev
+   git merge feature/issue-{N}-{description} --no-ff
+   ```
+
+3. **Merge `dev` into `main` only when a full phase is complete** (e.g. all tasks in Phase 3, Phase 4, etc. are done).
+   ```bash
+   git checkout main
+   git merge dev --no-ff
+   ```
+
+4. **Never merge a feature branch directly into `main`.**
+5. **Never branch off `main` for feature work.**
