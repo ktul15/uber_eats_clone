@@ -110,8 +110,9 @@ Feature branches follow `feature/issue-{N}-{description}`. Commit messages follo
 6. **After merging a feature branch into `dev`, move the corresponding GitHub issue to "Done" in the GitHub project.**
    ```bash
    # Find the project item ID for the issue, then update its status to Done
-   gh project item-list {PROJECT_NUMBER} --owner ktul15 --format json \
+   gh project item-list 3 --owner ktul15 --format json \
      | jq '.items[] | select(.content.number == {ISSUE_NUMBER}) | .id'
-   gh project item-edit --project-id {PROJECT_ID} --id {ITEM_ID} --field-id {STATUS_FIELD_ID} --single-select-option-id {DONE_OPTION_ID}
+   gh project item-edit --project-id PVT_kwHOAcao0M4BRHaa --id {ITEM_ID} \
+     --field-id PVTSSF_lAHOAcao0M4BRHaazg_CcAg --single-select-option-id 98236657
    ```
-   > **Note:** `gh` token must have the `project` scope (`gh auth refresh -s project`) for project board operations.
+   > **Note:** `gh` token must have the `project` scope (`gh auth refresh -s project --hostname github.com`) for project board operations.
