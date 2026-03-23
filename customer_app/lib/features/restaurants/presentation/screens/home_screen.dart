@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:customer_app/app/routes.dart';
+import 'package:customer_app/features/restaurants/domain/models/restaurant.dart';
 import 'package:customer_app/features/restaurants/presentation/widgets/restaurant_card.dart';
 import 'package:customer_app/features/restaurants/providers/restaurant_providers.dart';
 
@@ -30,6 +31,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _navigateToDetail(BuildContext context, Restaurant restaurant) {
+    context.goNamed(
+      AppRoutes.restaurantDetailName,
+      pathParameters: {'id': restaurant.id},
+    );
   }
 
   void _onSearchChanged() {
@@ -142,7 +150,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (_, index) => RestaurantCard(
                       restaurant: restaurants[index],
-                      onTap: null,
+                      onTap: () => _navigateToDetail(context, restaurants[index]),
                     ),
                   ),
                 );

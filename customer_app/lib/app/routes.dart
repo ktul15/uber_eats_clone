@@ -10,4 +10,7 @@ class AppRoutes {
 
   static const String profile = '/profile';
   static const String profileName = 'profile';
+
+  static const String restaurantDetail = '/restaurants/:id';
+  static const String restaurantDetailName = 'restaurantDetail';
 }

@@ -194,3 +194,78 @@ final class RestaurantListProvider
 }
 
 String _$restaurantListHash() => r'bd3d4a90da7cd7139e56422875d98e813e26729d';
+
+@ProviderFor(restaurantDetail)
+final restaurantDetailProvider = RestaurantDetailFamily._();
+
+final class RestaurantDetailProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<RestaurantDetail>,
+          RestaurantDetail,
+          FutureOr<RestaurantDetail>
+        >
+    with $FutureModifier<RestaurantDetail>, $FutureProvider<RestaurantDetail> {
+  RestaurantDetailProvider._({
+    required RestaurantDetailFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'restaurantDetailProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$restaurantDetailHash();
+
+  @override
+  String toString() {
+    return r'restaurantDetailProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<RestaurantDetail> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<RestaurantDetail> create(Ref ref) {
+    final argument = this.argument as String;
+    return restaurantDetail(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RestaurantDetailProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$restaurantDetailHash() => r'3c38121cf613e4d21bfd6797fb4966504fdae4d4';
+
+final class RestaurantDetailFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<RestaurantDetail>, String> {
+  RestaurantDetailFamily._()
+    : super(
+        retry: null,
+        name: r'restaurantDetailProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  RestaurantDetailProvider call(String id) =>
+      RestaurantDetailProvider._(argument: id, from: this);
+
+  @override
+  String toString() => r'restaurantDetailProvider';
+}
