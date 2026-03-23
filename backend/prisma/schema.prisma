@@ -61,6 +61,7 @@ model CustomerProfile {
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   orders Order[]
+  cart   Cart?
 }
 
 model DriverProfile {
@@ -104,6 +105,7 @@ model Restaurant {
   owner     User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   menuItems MenuItem[]
   orders    Order[]
+  carts     Cart[]
 }
 
 model MenuItem {
@@ -117,6 +119,7 @@ model MenuItem {
 
   restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
+  cartItems  CartItem[]
 }
 
 // -------------------------------------------------------------------------
@@ -148,6 +151,32 @@ model OrderItem {
 
   order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+// -------------------------------------------------------------------------
+// CART
+// -------------------------------------------------------------------------
+
+model Cart {
+  id           String   @id @default(uuid())
+  customerId   String   @unique
+  restaurantId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customer   CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  restaurant Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items      CartItem[]
+}
+
+model CartItem {
+  id         String @id @default(uuid())
+  cartId     String
+  menuItemId String
+  quantity   Int    @default(1)
+
+  cart     Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
 }
 
 model Delivery {

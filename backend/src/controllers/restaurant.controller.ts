@@ -84,10 +84,17 @@ export const updateRestaurant = async (req: AuthRequest, res: Response): Promise
     });
 };
 
-// GET ALL RESTAURANTS (Public)
-export const getAllRestaurants = async (_req: AuthRequest, res: Response): Promise<void> => {
+// GET ALL RESTAURANTS (Public) — optional ?search= for name filtering
+export const getAllRestaurants = async (req: AuthRequest, res: Response): Promise<void> => {
+    const search = req.query.search as string | undefined;
+
     const restaurants = await prisma.restaurant.findMany({
-        where: { isActive: true },
+        where: {
+            isActive: true,
+            ...(search?.trim().length
+                ? { name: { contains: search.trim(), mode: 'insensitive' } }
+                : {}),
+        },
     });
 
     res.status(200).json({
