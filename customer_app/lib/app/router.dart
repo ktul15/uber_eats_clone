@@ -6,6 +6,7 @@ import 'package:customer_app/features/auth/providers/auth_providers.dart';
 import 'package:customer_app/features/auth/presentation/screens/login_screen.dart';
 import 'package:customer_app/features/auth/presentation/screens/register_screen.dart';
 import 'package:customer_app/features/profile/presentation/screens/profile_screen.dart';
+import 'package:customer_app/features/restaurants/presentation/screens/home_screen.dart';
 
 part 'router.g.dart';
 
@@ -49,13 +50,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.home,
         name: AppRoutes.homeName,
-        builder: (context, state) => Scaffold(
-          body: const Center(child: Text('Customer App Home')),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => context.goNamed(AppRoutes.profileName),
-            child: const Icon(Icons.person),
-          ),
-        ),
+        builder: (context, state) => const HomeScreen(),
       ),
       GoRoute(
         path: AppRoutes.profile,
