@@ -13,6 +13,7 @@ import userRoutes from './routes/user.routes';
 import restaurantRoutes from './routes/restaurant.routes';
 import menuRoutes from './routes/menu.routes';
 import uploadRoutes from './routes/upload.routes';
+import cartRoutes from './routes/cart.routes';
 import path from 'path';
 
 // Middleware
@@ -24,6 +25,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/cart', cartRoutes);
 
 // We mount menuRoutes under a specific restaurant ID route
 app.use('/api/restaurants/:restaurantId/menu', menuRoutes);
