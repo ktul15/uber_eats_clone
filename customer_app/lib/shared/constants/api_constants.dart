@@ -7,4 +7,7 @@ class ApiConstants {
 
   // Profile endpoints
   static const String profile = '/api/users/profile';
+
+  // Restaurant endpoints
+  static const String restaurants = '/api/restaurants';
 }
