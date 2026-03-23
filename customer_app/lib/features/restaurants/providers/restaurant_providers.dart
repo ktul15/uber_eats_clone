@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:customer_app/features/restaurants/data/data_sources/restaurant_api_client.dart';
 import 'package:customer_app/features/restaurants/data/repositories/restaurant_repository.dart';
 import 'package:customer_app/features/restaurants/domain/models/restaurant.dart';
+import 'package:customer_app/features/restaurants/domain/models/restaurant_detail.dart';
 import 'package:customer_app/shared/providers/dio_provider.dart';
 
 part 'restaurant_providers.g.dart';
@@ -37,4 +38,12 @@ Future<List<Restaurant>> restaurantList(Ref ref) async {
   final query = ref.watch(searchQueryProvider);
   final repo = ref.watch(restaurantRepositoryProvider);
   return repo.getRestaurants(search: query.isEmpty ? null : query);
+}
+
+// --- Restaurant Detail ---
+
+@riverpod
+Future<RestaurantDetail> restaurantDetail(Ref ref, String id) async {
+  final repo = ref.watch(restaurantRepositoryProvider);
+  return repo.getRestaurantById(id);
 }

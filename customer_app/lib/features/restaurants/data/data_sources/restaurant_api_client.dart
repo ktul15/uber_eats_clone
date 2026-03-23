@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:customer_app/features/restaurants/data/models/restaurant_detail_dto.dart';
 import 'package:customer_app/features/restaurants/data/models/restaurant_dto.dart';
 import 'package:customer_app/shared/constants/api_constants.dart';
 
@@ -22,5 +23,12 @@ class RestaurantApiClient {
     return data
         .map((item) => RestaurantDto.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<RestaurantDetailDto> getRestaurantById(String id) async {
+    final response = await _dio.get('${ApiConstants.restaurants}/$id');
+    return RestaurantDetailDto.fromJson(
+      (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>,
+    );
   }
 }

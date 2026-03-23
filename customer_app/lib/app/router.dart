@@ -7,6 +7,7 @@ import 'package:customer_app/features/auth/presentation/screens/login_screen.dar
 import 'package:customer_app/features/auth/presentation/screens/register_screen.dart';
 import 'package:customer_app/features/profile/presentation/screens/profile_screen.dart';
 import 'package:customer_app/features/restaurants/presentation/screens/home_screen.dart';
+import 'package:customer_app/features/restaurants/presentation/screens/restaurant_detail_screen.dart';
 
 part 'router.g.dart';
 
@@ -56,6 +57,13 @@ GoRouter appRouter(Ref ref) {
         path: AppRoutes.profile,
         name: AppRoutes.profileName,
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.restaurantDetail,
+        name: AppRoutes.restaurantDetailName,
+        builder: (context, state) => RestaurantDetailScreen(
+          restaurantId: state.pathParameters['id']!,
+        ),
       ),
     ],
   );
