@@ -13,4 +13,7 @@ class AppRoutes {
 
   static const String restaurantDetail = '/restaurants/:id';
   static const String restaurantDetailName = 'restaurantDetail';
+
+  static const String cart = '/cart';
+  static const String cartName = 'cart';
 }

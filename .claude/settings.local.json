@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/ketulmakwana/Documents/portfolio_projects/uber_eats_clone/backend -name jest.config.* -o -name .jestrc*)",
+      "Bash(grep -E \"\\\\.\\(dart|yaml\\)$\")",
+      "Bash(npm run:*)",
+      "Bash(npx prisma:*)",
+      "Bash(flutter pub:*)",
+      "Bash(gh issue:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(gh project:*)",
+      "Bash(gh repo:*)",
+      "Bash(gh api:*)",
+      "Bash(npm test:*)",
+      "Bash(flutter analyze:*)"
+    ]
+  }
+}

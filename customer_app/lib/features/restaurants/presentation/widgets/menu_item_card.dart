@@ -4,11 +4,13 @@ import 'package:customer_app/features/restaurants/domain/models/menu_item.dart';
 class MenuItemCard extends StatelessWidget {
   final MenuItem menuItem;
   final VoidCallback? onTap;
+  final VoidCallback? onAddToCart;
 
   const MenuItemCard({
     super.key,
     required this.menuItem,
     this.onTap,
+    this.onAddToCart,
   });
 
   @override
@@ -72,14 +74,43 @@ class MenuItemCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            // Thumbnail
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: SizedBox(
-                width: 80,
-                height: 80,
-                child: _buildImage(),
-              ),
+            // Thumbnail + Add button
+            Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(width: 80, height: 80, child: _buildImage()),
+                ),
+                if (menuItem.isAvailable && onAddToCart != null)
+                  Positioned(
+                    right: -4,
+                    bottom: -4,
+                    child: GestureDetector(
+                      onTap: onAddToCart,
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ],
         ),

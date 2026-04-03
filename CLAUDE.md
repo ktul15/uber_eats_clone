@@ -85,41 +85,43 @@ Flutter apps expect `lib/shared/constants/api_keys.dart` (gitignored) for Google
 
 Feature branches follow `feature/issue-{N}-{description}`. Commit messages follow `closes #N: <type>: <description>` format.
 
-## Git Workflow (STRICT — must be followed exactly)
+## Git Flow
 
-1. **Always branch from `dev`** — never from `main` or another feature branch.
-   ```bash
-   git checkout dev
-   git checkout -b feature/issue-{N}-{description}
-   ```
+Branch hierarchy: `feature/*` → `dev` → `main`
 
-2. **Merge completed feature branches into `dev`** — never directly into `main`.
-   ```bash
-   git checkout dev
-   git merge feature/issue-{N}-{description} --no-ff
-   ```
+**Rules (must follow for every issue):**
+1. Always cut new feature branches from `dev`, never from `main`
+2. Branch naming: `feature/<issue-number>-<short-description>` (e.g., `feature/21-product-filters`)
+3. Commit messages follow Conventional Commits: `feat(scope): description`, `fix(scope): description`, etc.
+4. Always include `Closes #<issue-number>` in the commit body so GitHub auto-closes the issue on merge.
+5. Merge feature branch into `dev` when the feature is complete and tests pass
+6. After pushing `dev`, close the GitHub issue with `gh issue close <issue-number>` and a short comment noting the branch and target
+7. `main` is only updated by merging `dev` — never commit directly to `main` or `dev`
 
-3. **Merge `dev` into `main` only when a full phase is complete** (e.g. all tasks in Phase 3, Phase 4, etc. are done).
-   ```bash
-   git checkout main
-   git merge dev --no-ff
-   ```
+**Starting a new feature:**
+```bash
+git checkout dev
+git pull origin dev
+git checkout -b feature/<issue-number>-<short-description>
+```
 
-4. **Never merge a feature branch directly into `main`.**
-5. **Never branch off `main` for feature work.**
-6. **When starting a new issue, move it to "In Progress" in the GitHub project.**
-   ```bash
-   gh project item-list 3 --owner ktul15 --format json \
-     | jq '.items[] | select(.content.number == {ISSUE_NUMBER}) | .id'
-   gh project item-edit --project-id PVT_kwHOAcao0M4BRHaa --id {ITEM_ID} \
-     --field-id PVTSSF_lAHOAcao0M4BRHaazg_CcAg --single-select-option-id 47fc9ee4
-   ```
-7. **After merging a feature branch into `dev`, move the corresponding GitHub issue to "Done" in the GitHub project.**
-   ```bash
-   # Find the project item ID for the issue, then update its status to Done
-   gh project item-list 3 --owner ktul15 --format json \
-     | jq '.items[] | select(.content.number == {ISSUE_NUMBER}) | .id'
-   gh project item-edit --project-id PVT_kwHOAcao0M4BRHaa --id {ITEM_ID} \
-     --field-id PVTSSF_lAHOAcao0M4BRHaazg_CcAg --single-select-option-id 98236657
-   ```
-   > **Note:** `gh` token must have the `project` scope (`gh auth refresh -s project --hostname github.com`) for project board operations.
+**Finishing a feature:**
+```bash
+git checkout dev
+git merge --no-ff feature/<issue-number>-<short-description>
+git push origin dev
+# Close the GitHub issue after pushing:
+gh issue close <issue-number> --comment "Resolved in feature/<issue-number>-<short-description>, merged into dev."
+```
+
+**Before committing — mandatory code review:**
+1. Run the `senior-code-reviewer` agent on all changed files
+2. List every issue/suggestion found (short description of each)
+3. Ask the user which fixes to implement before proceeding with the commit
+
+**After merging and closing the issue — mandatory summary:**
+Once the feature is merged into `dev` and the GitHub issue is closed, deliver a written summary of the entire task covering:
+- **Why** — the business/product reason this feature was built
+- **What** — what was implemented at a high level (endpoints, behaviour, key decisions)
+- **How** — the technical approach (patterns used, non-obvious design choices, anything worth knowing for future work)
+- **Modified files** — a list of every file created or changed, with a one-line description of what changed in each

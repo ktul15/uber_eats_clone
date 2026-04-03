@@ -5,6 +5,7 @@ import 'package:customer_app/app/routes.dart';
 import 'package:customer_app/features/auth/providers/auth_providers.dart';
 import 'package:customer_app/features/auth/presentation/screens/login_screen.dart';
 import 'package:customer_app/features/auth/presentation/screens/register_screen.dart';
+import 'package:customer_app/features/cart/presentation/screens/cart_screen.dart';
 import 'package:customer_app/features/profile/presentation/screens/profile_screen.dart';
 import 'package:customer_app/features/restaurants/presentation/screens/home_screen.dart';
 import 'package:customer_app/features/restaurants/presentation/screens/restaurant_detail_screen.dart';
@@ -61,9 +62,13 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.restaurantDetail,
         name: AppRoutes.restaurantDetailName,
-        builder: (context, state) => RestaurantDetailScreen(
-          restaurantId: state.pathParameters['id']!,
-        ),
+        builder: (context, state) =>
+            RestaurantDetailScreen(restaurantId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: AppRoutes.cart,
+        name: AppRoutes.cartName,
+        builder: (context, state) => const CartScreen(),
       ),
     ],
   );

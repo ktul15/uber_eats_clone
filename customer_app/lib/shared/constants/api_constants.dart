@@ -10,4 +10,7 @@ class ApiConstants {
 
   // Restaurant endpoints
   static const String restaurants = '/api/restaurants';
+
+  // Cart endpoints
+  static const String cart = '/api/cart';
 }
