@@ -391,9 +391,7 @@ class _OrderSummary extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: () {
-                // TODO(issue-19): Navigate to checkout screen
-              },
+              onPressed: () => context.push(AppRoutes.checkout),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
