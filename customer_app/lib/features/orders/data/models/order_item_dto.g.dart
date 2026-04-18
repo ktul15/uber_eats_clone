@@ -28,7 +28,7 @@ _OrderItemDto _$OrderItemDtoFromJson(Map<String, dynamic> json) =>
       orderId: json['orderId'] as String,
       menuItemId: json['menuItemId'] as String,
       quantity: (json['quantity'] as num).toInt(),
-      priceAtTime: (json['priceAtTime'] as num).toDouble(),
+      priceAtTime: _doubleFromJson(json['priceAtTime']),
       menuItem: OrderItemMenuItemDto.fromJson(
         json['menuItem'] as Map<String, dynamic>,
       ),

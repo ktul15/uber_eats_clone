@@ -57,6 +57,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: const Text('Restaurants'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.receipt_long_outlined),
+            tooltip: 'My Orders',
+            onPressed: () => context.goNamed(AppRoutes.ordersName),
+          ),
+          IconButton(
             icon: const Icon(Icons.person_outline),
             tooltip: 'Profile',
             onPressed: () => context.goNamed(AppRoutes.profileName),

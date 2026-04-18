@@ -284,7 +284,7 @@ as String?,
 /// @nodoc
 mixin _$OrderDto {
 
- String get id; String get customerId; String get restaurantId; String get status; double get totalAmount; String get deliveryAddress; String get createdAt; List<OrderItemDto> get orderItems; OrderRestaurantDto get restaurant;
+ String get id; String get customerId; String get restaurantId; String get status;@JsonKey(fromJson: _doubleFromJson) double get totalAmount; String get deliveryAddress; DateTime get createdAt; List<OrderItemDto> get orderItems; OrderRestaurantDto get restaurant;
 /// Create a copy of OrderDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -317,7 +317,7 @@ abstract mixin class $OrderDtoCopyWith<$Res>  {
   factory $OrderDtoCopyWith(OrderDto value, $Res Function(OrderDto) _then) = _$OrderDtoCopyWithImpl;
 @useResult
 $Res call({
- String id, String customerId, String restaurantId, String status, double totalAmount, String deliveryAddress, String createdAt, List<OrderItemDto> orderItems, OrderRestaurantDto restaurant
+ String id, String customerId, String restaurantId, String status,@JsonKey(fromJson: _doubleFromJson) double totalAmount, String deliveryAddress, DateTime createdAt, List<OrderItemDto> orderItems, OrderRestaurantDto restaurant
 });
 
 
@@ -343,7 +343,7 @@ as String,status: null == status ? _self.status : status // ignore: cast_nullabl
 as String,totalAmount: null == totalAmount ? _self.totalAmount : totalAmount // ignore: cast_nullable_to_non_nullable
 as double,deliveryAddress: null == deliveryAddress ? _self.deliveryAddress : deliveryAddress // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as String,orderItems: null == orderItems ? _self.orderItems : orderItems // ignore: cast_nullable_to_non_nullable
+as DateTime,orderItems: null == orderItems ? _self.orderItems : orderItems // ignore: cast_nullable_to_non_nullable
 as List<OrderItemDto>,restaurant: null == restaurant ? _self.restaurant : restaurant // ignore: cast_nullable_to_non_nullable
 as OrderRestaurantDto,
   ));
@@ -439,7 +439,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String customerId,  String restaurantId,  String status,  double totalAmount,  String deliveryAddress,  String createdAt,  List<OrderItemDto> orderItems,  OrderRestaurantDto restaurant)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String customerId,  String restaurantId,  String status, @JsonKey(fromJson: _doubleFromJson)  double totalAmount,  String deliveryAddress,  DateTime createdAt,  List<OrderItemDto> orderItems,  OrderRestaurantDto restaurant)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OrderDto() when $default != null:
 return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.totalAmount,_that.deliveryAddress,_that.createdAt,_that.orderItems,_that.restaurant);case _:
@@ -460,7 +460,7 @@ return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String customerId,  String restaurantId,  String status,  double totalAmount,  String deliveryAddress,  String createdAt,  List<OrderItemDto> orderItems,  OrderRestaurantDto restaurant)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String customerId,  String restaurantId,  String status, @JsonKey(fromJson: _doubleFromJson)  double totalAmount,  String deliveryAddress,  DateTime createdAt,  List<OrderItemDto> orderItems,  OrderRestaurantDto restaurant)  $default,) {final _that = this;
 switch (_that) {
 case _OrderDto():
 return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.totalAmount,_that.deliveryAddress,_that.createdAt,_that.orderItems,_that.restaurant);case _:
@@ -480,7 +480,7 @@ return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String customerId,  String restaurantId,  String status,  double totalAmount,  String deliveryAddress,  String createdAt,  List<OrderItemDto> orderItems,  OrderRestaurantDto restaurant)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String customerId,  String restaurantId,  String status, @JsonKey(fromJson: _doubleFromJson)  double totalAmount,  String deliveryAddress,  DateTime createdAt,  List<OrderItemDto> orderItems,  OrderRestaurantDto restaurant)?  $default,) {final _that = this;
 switch (_that) {
 case _OrderDto() when $default != null:
 return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.totalAmount,_that.deliveryAddress,_that.createdAt,_that.orderItems,_that.restaurant);case _:
@@ -495,16 +495,16 @@ return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.
 @JsonSerializable()
 
 class _OrderDto implements OrderDto {
-  const _OrderDto({required this.id, required this.customerId, required this.restaurantId, required this.status, required this.totalAmount, required this.deliveryAddress, required this.createdAt, required final  List<OrderItemDto> orderItems, required this.restaurant}): _orderItems = orderItems;
+  const _OrderDto({required this.id, required this.customerId, required this.restaurantId, required this.status, @JsonKey(fromJson: _doubleFromJson) required this.totalAmount, required this.deliveryAddress, required this.createdAt, required final  List<OrderItemDto> orderItems, required this.restaurant}): _orderItems = orderItems;
   factory _OrderDto.fromJson(Map<String, dynamic> json) => _$OrderDtoFromJson(json);
 
 @override final  String id;
 @override final  String customerId;
 @override final  String restaurantId;
 @override final  String status;
-@override final  double totalAmount;
+@override@JsonKey(fromJson: _doubleFromJson) final  double totalAmount;
 @override final  String deliveryAddress;
-@override final  String createdAt;
+@override final  DateTime createdAt;
  final  List<OrderItemDto> _orderItems;
 @override List<OrderItemDto> get orderItems {
   if (_orderItems is EqualUnmodifiableListView) return _orderItems;
@@ -547,7 +547,7 @@ abstract mixin class _$OrderDtoCopyWith<$Res> implements $OrderDtoCopyWith<$Res>
   factory _$OrderDtoCopyWith(_OrderDto value, $Res Function(_OrderDto) _then) = __$OrderDtoCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String customerId, String restaurantId, String status, double totalAmount, String deliveryAddress, String createdAt, List<OrderItemDto> orderItems, OrderRestaurantDto restaurant
+ String id, String customerId, String restaurantId, String status,@JsonKey(fromJson: _doubleFromJson) double totalAmount, String deliveryAddress, DateTime createdAt, List<OrderItemDto> orderItems, OrderRestaurantDto restaurant
 });
 
 
@@ -573,7 +573,7 @@ as String,status: null == status ? _self.status : status // ignore: cast_nullabl
 as String,totalAmount: null == totalAmount ? _self.totalAmount : totalAmount // ignore: cast_nullable_to_non_nullable
 as double,deliveryAddress: null == deliveryAddress ? _self.deliveryAddress : deliveryAddress // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as String,orderItems: null == orderItems ? _self._orderItems : orderItems // ignore: cast_nullable_to_non_nullable
+as DateTime,orderItems: null == orderItems ? _self._orderItems : orderItems // ignore: cast_nullable_to_non_nullable
 as List<OrderItemDto>,restaurant: null == restaurant ? _self.restaurant : restaurant // ignore: cast_nullable_to_non_nullable
 as OrderRestaurantDto,
   ));

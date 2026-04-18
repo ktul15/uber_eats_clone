@@ -8,6 +8,7 @@ import 'package:customer_app/features/auth/presentation/screens/register_screen.
 import 'package:customer_app/features/cart/presentation/screens/cart_screen.dart';
 import 'package:customer_app/features/orders/presentation/screens/checkout_screen.dart';
 import 'package:customer_app/features/orders/presentation/screens/order_confirmation_screen.dart';
+import 'package:customer_app/features/orders/presentation/screens/orders_screen.dart';
 import 'package:customer_app/features/profile/presentation/screens/profile_screen.dart';
 import 'package:customer_app/features/restaurants/presentation/screens/home_screen.dart';
 import 'package:customer_app/features/restaurants/presentation/screens/restaurant_detail_screen.dart';
@@ -82,6 +83,11 @@ GoRouter appRouter(Ref ref) {
         name: AppRoutes.orderConfirmationName,
         builder: (context, state) =>
             OrderConfirmationScreen(orderId: state.extra as String),
+      ),
+      GoRoute(
+        path: AppRoutes.orders,
+        name: AppRoutes.ordersName,
+        builder: (context, state) => const OrdersScreen(),
       ),
     ],
   );
