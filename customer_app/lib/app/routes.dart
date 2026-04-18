@@ -22,4 +22,7 @@ class AppRoutes {
 
   static const String orderConfirmation = '/order-confirmation';
   static const String orderConfirmationName = 'orderConfirmation';
+
+  static const String orders = '/orders';
+  static const String ordersName = 'orders';
 }

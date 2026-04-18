@@ -4,6 +4,12 @@ import 'package:customer_app/features/orders/data/models/order_item_dto.dart';
 part 'order_dto.freezed.dart';
 part 'order_dto.g.dart';
 
+double _doubleFromJson(dynamic value) {
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  return double.parse(value.toString());
+}
+
 @freezed
 abstract class OrderRestaurantDto with _$OrderRestaurantDto {
   const factory OrderRestaurantDto({
@@ -23,9 +29,9 @@ abstract class OrderDto with _$OrderDto {
     required String customerId,
     required String restaurantId,
     required String status,
-    required double totalAmount,
+    @JsonKey(fromJson: _doubleFromJson) required double totalAmount,
     required String deliveryAddress,
-    required String createdAt,
+    required DateTime createdAt,
     required List<OrderItemDto> orderItems,
     required OrderRestaurantDto restaurant,
   }) = _OrderDto;

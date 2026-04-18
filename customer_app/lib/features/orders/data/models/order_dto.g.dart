@@ -25,9 +25,9 @@ _OrderDto _$OrderDtoFromJson(Map<String, dynamic> json) => _OrderDto(
   customerId: json['customerId'] as String,
   restaurantId: json['restaurantId'] as String,
   status: json['status'] as String,
-  totalAmount: (json['totalAmount'] as num).toDouble(),
+  totalAmount: _doubleFromJson(json['totalAmount']),
   deliveryAddress: json['deliveryAddress'] as String,
-  createdAt: json['createdAt'] as String,
+  createdAt: DateTime.parse(json['createdAt'] as String),
   orderItems: (json['orderItems'] as List<dynamic>)
       .map((e) => OrderItemDto.fromJson(e as Map<String, dynamic>))
       .toList(),
@@ -43,7 +43,7 @@ Map<String, dynamic> _$OrderDtoToJson(_OrderDto instance) => <String, dynamic>{
   'status': instance.status,
   'totalAmount': instance.totalAmount,
   'deliveryAddress': instance.deliveryAddress,
-  'createdAt': instance.createdAt,
+  'createdAt': instance.createdAt.toIso8601String(),
   'orderItems': instance.orderItems,
   'restaurant': instance.restaurant,
 };

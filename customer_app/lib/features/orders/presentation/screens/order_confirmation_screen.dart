@@ -67,7 +67,7 @@ class OrderConfirmationScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () => context.go(AppRoutes.home),
+                  onPressed: () => context.push(AppRoutes.orders),
                   child: const Text('View Orders'),
                 ),
               ),

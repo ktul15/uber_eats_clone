@@ -284,7 +284,7 @@ as String?,
 /// @nodoc
 mixin _$OrderItemDto {
 
- String get id; String get orderId; String get menuItemId; int get quantity; double get priceAtTime; OrderItemMenuItemDto get menuItem;
+ String get id; String get orderId; String get menuItemId; int get quantity;@JsonKey(fromJson: _doubleFromJson) double get priceAtTime; OrderItemMenuItemDto get menuItem;
 /// Create a copy of OrderItemDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -317,7 +317,7 @@ abstract mixin class $OrderItemDtoCopyWith<$Res>  {
   factory $OrderItemDtoCopyWith(OrderItemDto value, $Res Function(OrderItemDto) _then) = _$OrderItemDtoCopyWithImpl;
 @useResult
 $Res call({
- String id, String orderId, String menuItemId, int quantity, double priceAtTime, OrderItemMenuItemDto menuItem
+ String id, String orderId, String menuItemId, int quantity,@JsonKey(fromJson: _doubleFromJson) double priceAtTime, OrderItemMenuItemDto menuItem
 });
 
 
@@ -436,7 +436,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String orderId,  String menuItemId,  int quantity,  double priceAtTime,  OrderItemMenuItemDto menuItem)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String orderId,  String menuItemId,  int quantity, @JsonKey(fromJson: _doubleFromJson)  double priceAtTime,  OrderItemMenuItemDto menuItem)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OrderItemDto() when $default != null:
 return $default(_that.id,_that.orderId,_that.menuItemId,_that.quantity,_that.priceAtTime,_that.menuItem);case _:
@@ -457,7 +457,7 @@ return $default(_that.id,_that.orderId,_that.menuItemId,_that.quantity,_that.pri
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String orderId,  String menuItemId,  int quantity,  double priceAtTime,  OrderItemMenuItemDto menuItem)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String orderId,  String menuItemId,  int quantity, @JsonKey(fromJson: _doubleFromJson)  double priceAtTime,  OrderItemMenuItemDto menuItem)  $default,) {final _that = this;
 switch (_that) {
 case _OrderItemDto():
 return $default(_that.id,_that.orderId,_that.menuItemId,_that.quantity,_that.priceAtTime,_that.menuItem);case _:
@@ -477,7 +477,7 @@ return $default(_that.id,_that.orderId,_that.menuItemId,_that.quantity,_that.pri
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String orderId,  String menuItemId,  int quantity,  double priceAtTime,  OrderItemMenuItemDto menuItem)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String orderId,  String menuItemId,  int quantity, @JsonKey(fromJson: _doubleFromJson)  double priceAtTime,  OrderItemMenuItemDto menuItem)?  $default,) {final _that = this;
 switch (_that) {
 case _OrderItemDto() when $default != null:
 return $default(_that.id,_that.orderId,_that.menuItemId,_that.quantity,_that.priceAtTime,_that.menuItem);case _:
@@ -492,14 +492,14 @@ return $default(_that.id,_that.orderId,_that.menuItemId,_that.quantity,_that.pri
 @JsonSerializable()
 
 class _OrderItemDto implements OrderItemDto {
-  const _OrderItemDto({required this.id, required this.orderId, required this.menuItemId, required this.quantity, required this.priceAtTime, required this.menuItem});
+  const _OrderItemDto({required this.id, required this.orderId, required this.menuItemId, required this.quantity, @JsonKey(fromJson: _doubleFromJson) required this.priceAtTime, required this.menuItem});
   factory _OrderItemDto.fromJson(Map<String, dynamic> json) => _$OrderItemDtoFromJson(json);
 
 @override final  String id;
 @override final  String orderId;
 @override final  String menuItemId;
 @override final  int quantity;
-@override final  double priceAtTime;
+@override@JsonKey(fromJson: _doubleFromJson) final  double priceAtTime;
 @override final  OrderItemMenuItemDto menuItem;
 
 /// Create a copy of OrderItemDto
@@ -535,7 +535,7 @@ abstract mixin class _$OrderItemDtoCopyWith<$Res> implements $OrderItemDtoCopyWi
   factory _$OrderItemDtoCopyWith(_OrderItemDto value, $Res Function(_OrderItemDto) _then) = __$OrderItemDtoCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String orderId, String menuItemId, int quantity, double priceAtTime, OrderItemMenuItemDto menuItem
+ String id, String orderId, String menuItemId, int quantity,@JsonKey(fromJson: _doubleFromJson) double priceAtTime, OrderItemMenuItemDto menuItem
 });
 
 
