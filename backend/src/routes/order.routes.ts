@@ -5,6 +5,7 @@ import {
     placeOrder,
     getOrders,
     getOrderById,
+    updateOrderStatus,
 } from '../controllers/order.controller';
 
 const router = Router();
@@ -23,5 +24,7 @@ router.get('/', requireRole(['CUSTOMER', 'OWNER']), getOrders);
 
 // GET /api/orders/:id
 router.get('/:id', getOrderById);
+
+router.patch('/:id/status', requireRole(['OWNER']), updateOrderStatus);
 
 export default router;
