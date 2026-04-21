@@ -3,6 +3,9 @@ import { prisma } from '../utils/prisma';
 import { AppError } from '../utils/AppError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { AuthRequest } from '../types/auth.types';
+import { getIO } from '../socket/index';
+import { rooms } from '../socket/rooms';
+import { OrderStatus } from '@prisma/client';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const Stripe = require('stripe');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', { apiVersion: '2025-03-31.basil' });
@@ -122,6 +125,15 @@ export const placeOrder = asyncHandler(async (req: AuthRequest, res: Response): 
         });
     });
 
+    if (order) {
+        getIO().to(rooms.restaurant(order.restaurantId)).emit('order:new', {
+            orderId: order.id,
+            restaurantId: order.restaurantId,
+            totalAmount: order.totalAmount,
+            createdAt: order.createdAt,
+        });
+    }
+
     res.status(201).json({ success: true, data: order });
 });
 
@@ -173,4 +185,42 @@ export const getOrderById = asyncHandler(async (req: AuthRequest, res: Response)
     if (!order) throw AppError.notFound('Order not found');
 
     res.status(200).json({ success: true, data: order });
+});
+
+export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+    const userId = req.user?.id;
+    if (!userId) throw AppError.unauthorized('Not authenticated');
+
+    const orderId = req.params['id'] as string;
+    const { status } = req.body as { status?: string };
+
+    const validStatuses = Object.values(OrderStatus);
+    if (!status || !validStatuses.includes(status as OrderStatus)) {
+        throw AppError.badRequest(`status must be one of: ${validStatuses.join(', ')}`);
+    }
+
+    const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: {
+            restaurant: { select: { ownerId: true } },
+            customer: { select: { userId: true } },
+        },
+    });
+
+    if (!order) throw AppError.notFound('Order not found');
+    if (order.restaurant.ownerId !== userId) throw AppError.forbidden('You do not own this restaurant');
+
+    const updated = await prisma.order.update({
+        where: { id: orderId },
+        data: { status: status as OrderStatus },
+        include: { orderItems: { include: { menuItem: true } }, restaurant: true },
+    });
+
+    getIO().to(rooms.customer(order.customer.userId)).emit('order:status_updated', {
+        orderId: updated.id,
+        status: updated.status,
+        updatedAt: updated.updatedAt,
+    });
+
+    res.status(200).json({ success: true, data: updated });
 });

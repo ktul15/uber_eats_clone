@@ -1,7 +1,9 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { createServer } from 'http';
 import { errorHandler } from './middlewares/error.middleware';
+import { initSocket } from './socket/index';
 
 dotenv.config();
 
@@ -42,6 +44,9 @@ app.get('/health', (req: Request, res: Response) => {
 // Global Error Handler (must be LAST)
 app.use(errorHandler);
 
-app.listen(port, () => {
+const httpServer = createServer(app);
+initSocket(httpServer);
+
+httpServer.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
