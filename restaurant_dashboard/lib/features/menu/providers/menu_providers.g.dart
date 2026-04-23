@@ -48,7 +48,7 @@ final class MenuApiClientProvider
   }
 }
 
-String _$menuApiClientHash() => r'f7e9b7edb0c9e1877df5a2b8277367e20a353ad0';
+String _$menuApiClientHash() => r'0dab1568100c4bf155fcd15b8b9602cf8a524374';
 
 @ProviderFor(menuRepository)
 final menuRepositoryProvider = MenuRepositoryProvider._();
@@ -116,7 +116,7 @@ final class MyRestaurantsControllerProvider
 }
 
 String _$myRestaurantsControllerHash() =>
-    r'bdab22b068b433d2e9271ded149f6c235bba66c2';
+    r'5eaa8a6feb8a89657d9a2c3049d35946a18800f2';
 
 abstract class _$MyRestaurantsController
     extends $AsyncNotifier<List<Restaurant>> {

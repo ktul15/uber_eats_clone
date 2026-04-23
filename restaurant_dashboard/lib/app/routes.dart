@@ -13,4 +13,7 @@ class AppRoutes {
 
   static const String menu = '/menu/:restaurantId';
   static const String menuName = 'menu';
+
+  static const String activeOrders = '/active-orders';
+  static const String activeOrdersName = 'activeOrders';
 }

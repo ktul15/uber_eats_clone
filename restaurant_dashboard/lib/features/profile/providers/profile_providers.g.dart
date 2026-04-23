@@ -53,7 +53,7 @@ final class ProfileApiClientProvider
   }
 }
 
-String _$profileApiClientHash() => r'babbc334c9ee44f6fb2a38f2cff1f1f328d92d73';
+String _$profileApiClientHash() => r'83ce12db90eebc2ca2ba89499b09cac835a2f7de';
 
 @ProviderFor(profileRepository)
 final profileRepositoryProvider = ProfileRepositoryProvider._();
