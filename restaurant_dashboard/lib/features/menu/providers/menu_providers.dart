@@ -1,4 +1,3 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:restaurant_dashboard/features/menu/data/data_sources/menu_api_client.dart';
 import 'package:restaurant_dashboard/features/menu/domain/models/menu_item.dart';
 import 'package:restaurant_dashboard/features/menu/domain/models/restaurant.dart';
@@ -11,8 +10,7 @@ part 'menu_providers.g.dart';
 @riverpod
 MenuApiClient menuApiClient(Ref ref) {
   final dio = ref.watch(dioProvider);
-  const storage = FlutterSecureStorage();
-  return MenuApiClient(dio: dio, storage: storage);
+  return MenuApiClient(dio);
 }
 
 @riverpod

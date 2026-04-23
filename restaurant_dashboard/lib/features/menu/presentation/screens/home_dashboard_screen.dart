@@ -231,6 +231,13 @@ class _HomeDashboardScreenState extends ConsumerState<HomeDashboardScreen> {
                 ),
                 const SizedBox(height: AppSizes.p24),
                 AppButton(
+                  text: 'Active Orders',
+                  onPressed: () {
+                    context.pushNamed(AppRoutes.activeOrdersName);
+                  },
+                ),
+                const SizedBox(height: AppSizes.p12),
+                AppButton(
                   text: 'Manage Menu Options',
                   onPressed: () {
                     context.pushNamed(

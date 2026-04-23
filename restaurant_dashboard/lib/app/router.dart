@@ -8,6 +8,7 @@ import 'package:restaurant_dashboard/features/auth/presentation/screens/register
 import 'package:restaurant_dashboard/features/profile/presentation/screens/profile_screen.dart';
 import 'package:restaurant_dashboard/features/menu/presentation/screens/home_dashboard_screen.dart';
 import 'package:restaurant_dashboard/features/menu/presentation/screens/menu_management_screen.dart';
+import 'package:restaurant_dashboard/features/orders/presentation/screens/active_orders_screen.dart';
 
 part 'router.g.dart';
 
@@ -65,6 +66,11 @@ GoRouter appRouter(Ref ref) {
         path: AppRoutes.profile,
         name: AppRoutes.profileName,
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.activeOrders,
+        name: AppRoutes.activeOrdersName,
+        builder: (context, state) => const ActiveOrdersScreen(),
       ),
     ],
   );

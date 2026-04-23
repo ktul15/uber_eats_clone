@@ -1,4 +1,3 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:restaurant_dashboard/features/profile/data/data_sources/profile_api_client.dart';
 import 'package:restaurant_dashboard/features/profile/domain/models/user_profile.dart';
@@ -11,8 +10,7 @@ part 'profile_providers.g.dart';
 @riverpod
 ProfileApiClient profileApiClient(Ref ref) {
   final dio = ref.watch(dioProvider);
-  const storage = FlutterSecureStorage();
-  return ProfileApiClient(dio: dio, storage: storage);
+  return ProfileApiClient(dio);
 }
 
 @riverpod
