@@ -6,6 +6,7 @@ import { AuthRequest } from '../types/auth.types';
 import { getIO } from '../socket/index';
 import { rooms } from '../socket/rooms';
 import { OrderStatus } from '@prisma/client';
+import { haversineKm } from '../utils/haversine';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const Stripe = require('stripe');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', { apiVersion: '2025-03-31.basil' });
@@ -202,7 +203,7 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
     const order = await prisma.order.findUnique({
         where: { id: orderId },
         select: {
-            restaurant: { select: { ownerId: true } },
+            restaurant: { select: { ownerId: true, name: true, lat: true, lng: true } },
             customer: { select: { userId: true } },
         },
     });
@@ -221,6 +222,38 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
         status: updated.status,
         updatedAt: updated.updatedAt,
     });
+
+    if (status === 'READY') {
+        const availableDrivers = await prisma.driverProfile.findMany({
+            where: { isAvailable: true },
+            select: { userId: true, currentLat: true, currentLng: true },
+        });
+        const io = getIO();
+        const payload = {
+            orderId: updated.id,
+            restaurantId: updated.restaurantId,
+            restaurantName: updated.restaurant.name,
+            deliveryAddress: updated.deliveryAddress,
+            totalAmount: updated.totalAmount,
+        };
+        availableDrivers.forEach((driver) => {
+            if (
+                order.restaurant.lat != null &&
+                order.restaurant.lng != null &&
+                driver.currentLat != null &&
+                driver.currentLng != null
+            ) {
+                const dist = haversineKm(
+                    driver.currentLat,
+                    driver.currentLng,
+                    order.restaurant.lat,
+                    order.restaurant.lng,
+                );
+                if (dist > 10) return;
+            }
+            io.to(rooms.driver(driver.userId)).emit('order:available', payload);
+        });
+    }
 
     res.status(200).json({ success: true, data: updated });
 });
