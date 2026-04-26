@@ -5,8 +5,9 @@ import 'package:driver_app/features/deliveries/providers/delivery_providers.dart
 
 class IncomingOrderSheet extends ConsumerStatefulWidget {
   final AvailableOrder order;
+  final VoidCallback onAccepted;
 
-  const IncomingOrderSheet({super.key, required this.order});
+  const IncomingOrderSheet({super.key, required this.order, required this.onAccepted});
 
   @override
   ConsumerState<IncomingOrderSheet> createState() => _IncomingOrderSheetState();
@@ -47,12 +48,8 @@ class _IncomingOrderSheetState extends ConsumerState<IncomingOrderSheet>
         ),
       );
     } else {
-      // Capture messenger before pop so the context is still valid.
-      final messenger = ScaffoldMessenger.of(context);
       Navigator.of(context).pop();
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Delivery accepted!')),
-      );
+      widget.onAccepted();
     }
   }
 

@@ -6,6 +6,7 @@ import 'package:driver_app/app/routes.dart';
 import 'package:driver_app/features/auth/providers/auth_providers.dart';
 import 'package:driver_app/features/deliveries/domain/models/available_order.dart';
 import 'package:driver_app/features/deliveries/presentation/widgets/incoming_order_sheet.dart';
+import 'package:driver_app/features/deliveries/providers/delivery_providers.dart';
 import 'package:driver_app/features/profile/providers/profile_providers.dart';
 import 'package:driver_app/shared/constants/api_constants.dart';
 
@@ -26,7 +27,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _setupSocket());
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _checkActiveDelivery();
+      if (mounted) _setupSocket();
+    });
+  }
+
+  Future<void> _checkActiveDelivery() async {
+    try {
+      final delivery = await ref.read(activeDeliveryProvider.future);
+      if (mounted && delivery != null) {
+        context.goNamed(AppRoutes.activeDeliveryName);
+      }
+    } catch (_) {
+      // Ignore errors — proceed to home normally
+    }
   }
 
   @override
@@ -113,7 +128,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       isDismissible: false,
       enableDrag: false,
       isScrollControlled: true,
-      builder: (_) => IncomingOrderSheet(order: order),
+      builder: (_) => IncomingOrderSheet(
+        order: order,
+        onAccepted: () => context.goNamed(AppRoutes.activeDeliveryName),
+      ),
     ).whenComplete(() => _sheetVisible = false);
   }
 

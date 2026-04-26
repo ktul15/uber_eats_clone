@@ -6,6 +6,7 @@ import 'package:driver_app/features/auth/providers/auth_providers.dart';
 import 'package:driver_app/features/auth/presentation/screens/login_screen.dart';
 import 'package:driver_app/features/auth/presentation/screens/register_screen.dart';
 import 'package:driver_app/features/deliveries/presentation/screens/home_screen.dart';
+import 'package:driver_app/features/deliveries/presentation/screens/active_delivery_screen.dart';
 import 'package:driver_app/features/profile/presentation/screens/profile_screen.dart';
 
 part 'router.g.dart';
@@ -56,6 +57,11 @@ GoRouter appRouter(Ref ref) {
         path: AppRoutes.profile,
         name: AppRoutes.profileName,
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.activeDelivery,
+        name: AppRoutes.activeDeliveryName,
+        builder: (context, state) => const ActiveDeliveryScreen(),
       ),
     ],
   );

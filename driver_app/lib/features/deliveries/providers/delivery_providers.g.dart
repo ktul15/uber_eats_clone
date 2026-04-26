@@ -99,3 +99,87 @@ abstract class _$AcceptDelivery extends $AsyncNotifier<void> {
     element.handleCreate(ref, build);
   }
 }
+
+@ProviderFor(activeDelivery)
+final activeDeliveryProvider = ActiveDeliveryProvider._();
+
+final class ActiveDeliveryProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<ActiveDelivery?>,
+          ActiveDelivery?,
+          FutureOr<ActiveDelivery?>
+        >
+    with $FutureModifier<ActiveDelivery?>, $FutureProvider<ActiveDelivery?> {
+  ActiveDeliveryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'activeDeliveryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$activeDeliveryHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<ActiveDelivery?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<ActiveDelivery?> create(Ref ref) {
+    return activeDelivery(ref);
+  }
+}
+
+String _$activeDeliveryHash() => r'729a0c55bbc3a5c2a097c968cbae4081e0929aa6';
+
+@ProviderFor(UpdateDeliveryStatus)
+final updateDeliveryStatusProvider = UpdateDeliveryStatusProvider._();
+
+final class UpdateDeliveryStatusProvider
+    extends $AsyncNotifierProvider<UpdateDeliveryStatus, void> {
+  UpdateDeliveryStatusProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'updateDeliveryStatusProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$updateDeliveryStatusHash();
+
+  @$internal
+  @override
+  UpdateDeliveryStatus create() => UpdateDeliveryStatus();
+}
+
+String _$updateDeliveryStatusHash() =>
+    r'ad5f983c9d80d70685abacba721a144686590f40';
+
+abstract class _$UpdateDeliveryStatus extends $AsyncNotifier<void> {
+  FutureOr<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, void>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
