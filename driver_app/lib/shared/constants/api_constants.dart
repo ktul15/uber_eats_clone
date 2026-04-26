@@ -10,4 +10,6 @@ class ApiConstants {
 
   // Delivery endpoints
   static const String acceptDelivery = '/api/deliveries/accept';
+  static const String activeDelivery = '/api/deliveries/active';
+  static String updateDeliveryStatus(String id) => '/api/deliveries/$id/status';
 }

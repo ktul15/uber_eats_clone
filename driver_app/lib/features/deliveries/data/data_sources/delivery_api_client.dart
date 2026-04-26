@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:driver_app/features/deliveries/data/models/active_delivery_dto.dart';
 import 'package:driver_app/shared/constants/api_constants.dart';
 
 class DeliveryApiClient {
@@ -22,6 +23,23 @@ class DeliveryApiClient {
     await _dio.post(
       ApiConstants.acceptDelivery,
       data: {'orderId': orderId},
+      options: options,
+    );
+  }
+
+  Future<ActiveDeliveryDto?> getActiveDelivery() async {
+    final options = await _authOptions();
+    final response = await _dio.get(ApiConstants.activeDelivery, options: options);
+    final data = (response.data as Map<String, dynamic>)['data'];
+    if (data == null) return null;
+    return ActiveDeliveryDto.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<void> updateDeliveryStatus(String deliveryId, String status) async {
+    final options = await _authOptions();
+    await _dio.patch(
+      ApiConstants.updateDeliveryStatus(deliveryId),
+      data: {'status': status},
       options: options,
     );
   }
