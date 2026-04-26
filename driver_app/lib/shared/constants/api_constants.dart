@@ -7,4 +7,7 @@ class ApiConstants {
 
   // Profile endpoints
   static const String profile = '/api/users/profile';
+
+  // Delivery endpoints
+  static const String acceptDelivery = '/api/deliveries/accept';
 }
