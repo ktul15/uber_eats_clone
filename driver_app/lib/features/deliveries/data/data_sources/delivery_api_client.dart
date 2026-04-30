@@ -43,4 +43,13 @@ class DeliveryApiClient {
       options: options,
     );
   }
+
+  Future<void> updateLocation(String deliveryId, double lat, double lng) async {
+    final options = await _authOptions();
+    await _dio.patch(
+      ApiConstants.updateDeliveryLocation(deliveryId),
+      data: {'lat': lat, 'lng': lng},
+      options: options,
+    );
+  }
 }

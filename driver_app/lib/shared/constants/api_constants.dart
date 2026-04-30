@@ -12,4 +12,5 @@ class ApiConstants {
   static const String acceptDelivery = '/api/deliveries/accept';
   static const String activeDelivery = '/api/deliveries/active';
   static String updateDeliveryStatus(String id) => '/api/deliveries/$id/status';
+  static String updateDeliveryLocation(String id) => '/api/deliveries/$id/location';
 }
