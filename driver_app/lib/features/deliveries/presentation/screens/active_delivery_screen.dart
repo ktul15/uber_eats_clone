@@ -4,12 +4,35 @@ import 'package:go_router/go_router.dart';
 import 'package:driver_app/app/routes.dart';
 import 'package:driver_app/features/deliveries/domain/models/active_delivery.dart';
 import 'package:driver_app/features/deliveries/providers/delivery_providers.dart';
+import 'package:driver_app/features/deliveries/providers/location_providers.dart';
 
-class ActiveDeliveryScreen extends ConsumerWidget {
+class ActiveDeliveryScreen extends ConsumerStatefulWidget {
   const ActiveDeliveryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ActiveDeliveryScreen> createState() => _ActiveDeliveryScreenState();
+}
+
+class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final delivery = await ref.read(activeDeliveryProvider.future);
+      if (delivery != null && delivery.status != DeliveryStatus.completed && mounted) {
+        ref.read(locationTrackerProvider.notifier).start(delivery.id);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    ref.read(locationTrackerProvider.notifier).stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final deliveryAsync = ref.watch(activeDeliveryProvider);
 
     ref.listen(activeDeliveryProvider, (prev, next) {
@@ -17,8 +40,7 @@ class ActiveDeliveryScreen extends ConsumerWidget {
         final wasActive = prev?.value != null;
         final isGone = next.value == null;
         if (isGone && wasActive) {
-          // Backend excludes COMPLETED deliveries from getActiveDelivery,
-          // so null after a non-null value means delivery was just completed.
+          ref.read(locationTrackerProvider.notifier).stop();
           context.goNamed(AppRoutes.homeName);
         }
       }

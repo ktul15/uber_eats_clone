@@ -145,6 +145,50 @@ export const updateDeliveryStatus = asyncHandler(async (req: AuthRequest, res: R
     res.status(200).json({ success: true, data: delivery });
 });
 
+// PATCH /api/deliveries/:id/location
+export const updateLocation = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+    const userId = req.user?.id;
+    if (!userId) throw AppError.unauthorized('Not authenticated');
+
+    const deliveryId = req.params['id'] as string;
+    const { lat, lng } = req.body as { lat?: unknown; lng?: unknown };
+
+    if (typeof lat !== 'number' || typeof lng !== 'number' || !isFinite(lat) || !isFinite(lng)) {
+        throw AppError.badRequest('lat and lng must be finite numbers');
+    }
+
+    const delivery = await prisma.$transaction(async (tx) => {
+        const profile = await tx.driverProfile.findUnique({ where: { userId } });
+        if (!profile) throw AppError.notFound('Driver profile not found');
+
+        const existing = await tx.delivery.findUnique({
+            where: { id: deliveryId },
+            include: { order: { include: { customer: { select: { userId: true } } } } },
+        });
+
+        if (!existing) throw AppError.notFound('Delivery not found');
+        if (existing.driverId !== profile.id) throw AppError.forbidden('You do not own this delivery');
+        if (existing.status === DeliveryStatus.COMPLETED) throw AppError.badRequest('Delivery already completed');
+
+        await tx.driverProfile.update({
+            where: { id: profile.id },
+            data: { currentLat: lat, currentLng: lng },
+        });
+
+        return existing;
+    });
+
+    const io = getIO();
+    io.to(rooms.customer(delivery.order.customer.userId)).emit('driver:location', {
+        deliveryId,
+        lat,
+        lng,
+        updatedAt: new Date(),
+    });
+
+    res.status(200).json({ success: true });
+});
+
 // GET /api/deliveries/active
 export const getActiveDelivery = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
     const userId = req.user?.id;
