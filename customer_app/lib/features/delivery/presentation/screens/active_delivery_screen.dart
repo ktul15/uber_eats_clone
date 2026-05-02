@@ -26,8 +26,51 @@ class ActiveDeliveryScreen extends ConsumerStatefulWidget {
       _ActiveDeliveryScreenState();
 }
 
-class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
+class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
+    with SingleTickerProviderStateMixin {
   final _mapController = Completer<GoogleMapController>();
+
+  late AnimationController _markerAnimController;
+  late Animation<double> _markerAnim;
+
+  LatLng? _animatedDriverPos;
+  LatLng? _animStart;
+  LatLng? _animEnd;
+
+  @override
+  void initState() {
+    super.initState();
+    _markerAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _markerAnim = CurvedAnimation(
+      parent: _markerAnimController,
+      curve: Curves.easeInOut,
+    );
+    _markerAnim.addListener(_onAnimTick);
+  }
+
+  @override
+  void dispose() {
+    _markerAnim.removeListener(_onAnimTick);
+    _markerAnimController.dispose();
+    super.dispose();
+  }
+
+  void _onAnimTick() {
+    if (_animStart == null || _animEnd == null) return;
+    setState(() {
+      _animatedDriverPos = _lerpLatLng(_animStart!, _animEnd!, _markerAnim.value);
+    });
+  }
+
+  static LatLng _lerpLatLng(LatLng a, LatLng b, double t) {
+    return LatLng(
+      a.latitude + (b.latitude - a.latitude) * t,
+      a.longitude + (b.longitude - a.longitude) * t,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,13 +83,31 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
     ref.listen(activeDeliveryProvider(widget.orderId), (_, next) {
       final lat = next.driverLat;
       final lng = next.driverLng;
-      if (lat != null && lng != null) {
-        _mapController.future.then((controller) {
-          controller.animateCamera(
-            CameraUpdate.newLatLng(LatLng(lat, lng)),
-          );
+      if (lat == null || lng == null) return;
+      final newTarget = LatLng(lat, lng);
+
+      if (_animatedDriverPos == null) {
+        setState(() {
+          _animatedDriverPos = newTarget;
+          _animStart = newTarget;
+          _animEnd = newTarget;
         });
+        _mapController.future.then((c) =>
+            c.animateCamera(CameraUpdate.newLatLng(newTarget)));
+        return;
       }
+
+      setState(() {
+        _animStart = _animatedDriverPos;
+        _animEnd = newTarget;
+      });
+      _markerAnimController
+        ..stop()
+        ..reset()
+        ..forward();
+
+      _mapController.future.then((c) =>
+          c.animateCamera(CameraUpdate.newLatLng(newTarget)));
     });
 
     final isDelivered = deliveryState.status == 'COMPLETED';
@@ -165,10 +226,7 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
   }
 
   Widget _buildMap(ActiveDeliveryState deliveryState, ThemeData theme) {
-    final hasLocation =
-        deliveryState.driverLat != null && deliveryState.driverLng != null;
-
-    if (!hasLocation) {
+    if (_animatedDriverPos == null) {
       return Container(
         color: theme.colorScheme.surfaceContainerLowest,
         child: Center(
@@ -193,19 +251,20 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
       );
     }
 
-    final driverPos = LatLng(deliveryState.driverLat!, deliveryState.driverLng!);
-
     return GoogleMap(
       onMapCreated: (controller) {
         if (!_mapController.isCompleted) {
           _mapController.complete(controller);
         }
       },
-      initialCameraPosition: CameraPosition(target: driverPos, zoom: 15),
+      initialCameraPosition: CameraPosition(
+        target: _animatedDriverPos!,
+        zoom: 15,
+      ),
       markers: {
         Marker(
           markerId: const MarkerId('driver'),
-          position: driverPos,
+          position: _animatedDriverPos!,
           icon: BitmapDescriptor.defaultMarkerWithHue(
             BitmapDescriptor.hueBlue,
           ),
