@@ -214,3 +214,36 @@ export const getActiveDelivery = asyncHandler(async (req: AuthRequest, res: Resp
 
     res.status(200).json({ success: true, data: delivery });
 });
+
+// GET /api/deliveries/:id/driver-location
+export const getDriverLocation = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+    const userId = req.user?.id;
+    if (!userId) throw AppError.unauthorized('Not authenticated');
+
+    const deliveryId = req.params['id'] as string;
+
+    const customerProfile = await prisma.customerProfile.findUnique({ where: { userId } });
+    if (!customerProfile) throw AppError.notFound('Customer profile not found');
+
+    const delivery = await prisma.delivery.findUnique({
+        where: { id: deliveryId },
+        include: {
+            order: { select: { customerId: true } },
+            driver: { select: { currentLat: true, currentLng: true } },
+        },
+    });
+    if (!delivery) throw AppError.notFound('Delivery not found');
+
+    if (delivery.order.customerId !== customerProfile.id) {
+        throw AppError.forbidden('You do not own this delivery');
+    }
+
+    if (delivery.status === DeliveryStatus.COMPLETED) {
+        throw AppError.badRequest('Delivery already completed');
+    }
+
+    res.status(200).json({
+        success: true,
+        data: { deliveryId, lat: delivery.driver.currentLat, lng: delivery.driver.currentLng },
+    });
+});
