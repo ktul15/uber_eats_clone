@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:customer_app/app/routes.dart';
+import 'package:customer_app/features/orders/providers/order_providers.dart';
 
-class OrderConfirmationScreen extends StatelessWidget {
+class OrderConfirmationScreen extends ConsumerWidget {
   final String orderId;
 
   const OrderConfirmationScreen({super.key, required this.orderId});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final lastOrder = switch (ref.read(placeOrderProvider)) {
+      AsyncData(:final value) => value,
+      _ => null,
+    };
 
     return Scaffold(
       body: SafeArea(
@@ -61,6 +67,23 @@ class OrderConfirmationScreen extends StatelessWidget {
                 child: FilledButton(
                   onPressed: () => context.go(AppRoutes.home),
                   child: const Text('Back to Home'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonal(
+                  onPressed: () => context.push(
+                    '/active-delivery/$orderId',
+                    extra: lastOrder != null
+                        ? {
+                            'restaurantName': lastOrder.restaurant.name,
+                            'itemCount': lastOrder.orderItems.length,
+                            'total': lastOrder.totalAmount,
+                          }
+                        : null,
+                  ),
+                  child: const Text('Track Order'),
                 ),
               ),
               const SizedBox(height: 12),

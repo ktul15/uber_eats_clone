@@ -11,6 +11,7 @@ import 'package:customer_app/features/orders/presentation/screens/order_confirma
 import 'package:customer_app/features/orders/presentation/screens/orders_screen.dart';
 import 'package:customer_app/features/profile/presentation/screens/profile_screen.dart';
 import 'package:customer_app/features/restaurants/presentation/screens/home_screen.dart';
+import 'package:customer_app/features/delivery/presentation/screens/active_delivery_screen.dart';
 import 'package:customer_app/features/restaurants/presentation/screens/restaurant_detail_screen.dart';
 
 part 'router.g.dart';
@@ -88,6 +89,14 @@ GoRouter appRouter(Ref ref) {
         path: AppRoutes.orders,
         name: AppRoutes.ordersName,
         builder: (context, state) => const OrdersScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.activeDelivery,
+        name: AppRoutes.activeDeliveryName,
+        builder: (context, state) => ActiveDeliveryScreen(
+          orderId: state.pathParameters['orderId']!,
+          extra: state.extra as Map<String, dynamic>?,
+        ),
       ),
     ],
   );

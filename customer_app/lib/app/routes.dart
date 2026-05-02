@@ -25,4 +25,7 @@ class AppRoutes {
 
   static const String orders = '/orders';
   static const String ordersName = 'orders';
+
+  static const String activeDelivery = '/active-delivery/:orderId';
+  static const String activeDeliveryName = 'activeDelivery';
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:customer_app/features/orders/data/models/order_dto.dart';
 import 'package:customer_app/features/orders/data/models/order_item_dto.dart';
 import 'package:customer_app/features/orders/providers/order_providers.dart';
@@ -178,6 +179,27 @@ class _OrderCardState extends State<_OrderCard> {
                     ),
                   ],
                 ),
+                // Track button for active orders
+                if (_isActiveDelivery(order.status)) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.tonal(
+                      onPressed: () => context.push(
+                        '/active-delivery/${order.id}',
+                        extra: {
+                          'restaurantName': order.restaurant.name,
+                          'itemCount': order.orderItems.length,
+                          'total': order.totalAmount,
+                        },
+                      ),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                      child: const Text('Track Order'),
+                    ),
+                  ),
+                ],
                 // Expanded item list
                 if (_expanded && hasItems) ...[
                   const Divider(height: 24),
@@ -231,6 +253,18 @@ class _OrderItemRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+bool _isActiveDelivery(String status) {
+  const activeStatuses = {
+    'ACCEPTED',
+    'PREPARING',
+    'READY',
+    'READY_FOR_PICKUP',
+    'OUT_FOR_DELIVERY',
+    'PICKED_UP',
+  };
+  return activeStatuses.contains(status.toUpperCase());
+}
 
 String _formatDate(DateTime dateTime) {
   const months = [
