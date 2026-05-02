@@ -13,7 +13,7 @@ jest.mock('../../socket/index', () => ({
 }));
 
 // Import after mocks are established
-import { acceptDelivery, updateDeliveryStatus, getActiveDelivery } from '../delivery.controller';
+import { acceptDelivery, updateDeliveryStatus, getActiveDelivery, updateLocation, getDriverLocation } from '../delivery.controller';
 
 describe('Delivery Controller', () => {
     let req: any;
@@ -269,6 +269,238 @@ describe('Delivery Controller', () => {
             expect(mockEmit).toHaveBeenCalledWith(
                 'delivery:status_updated',
                 expect.objectContaining({ status: 'AT_RESTAURANT' }),
+            );
+        });
+    });
+
+    // ─── updateLocation ───────────────────────────────────────────────────────
+
+    describe('updateLocation', () => {
+        beforeEach(() => {
+            req = {
+                user: { id: 'user-1', role: 'DRIVER' },
+                params: { id: 'del-1' },
+                body: { lat: 37.77, lng: -122.41 },
+            };
+        });
+
+        it('throws 401 if unauthenticated', async () => {
+            req.user = undefined;
+            await expect(updateLocation(req, res)).rejects.toThrow(AppError);
+        });
+
+        it('throws 400 if lat is missing', async () => {
+            req.body = { lng: -122.41 };
+            await expect(updateLocation(req, res)).rejects.toThrow(AppError);
+        });
+
+        it('throws 400 if lng is missing', async () => {
+            req.body = { lat: 37.77 };
+            await expect(updateLocation(req, res)).rejects.toThrow(AppError);
+        });
+
+        it('throws 400 if lat is NaN', async () => {
+            req.body = { lat: NaN, lng: -122.41 };
+            await expect(updateLocation(req, res)).rejects.toThrow(AppError);
+        });
+
+        it('throws 400 if lat is Infinity', async () => {
+            req.body = { lat: Infinity, lng: -122.41 };
+            await expect(updateLocation(req, res)).rejects.toThrow(AppError);
+        });
+
+        it('throws 400 if lat/lng are strings', async () => {
+            req.body = { lat: '37.77', lng: '-122.41' };
+            await expect(updateLocation(req, res)).rejects.toThrow(AppError);
+        });
+
+        it('throws 404 if driver profile not found', async () => {
+            prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+            prismaMock.driverProfile.findUnique.mockResolvedValueOnce(null);
+            await expect(updateLocation(req, res)).rejects.toThrow(AppError);
+        });
+
+        it('throws 404 if delivery not found', async () => {
+            prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+            prismaMock.driverProfile.findUnique.mockResolvedValueOnce({ id: 'dp-1' } as any);
+            prismaMock.delivery.findUnique.mockResolvedValueOnce(null);
+            await expect(updateLocation(req, res)).rejects.toThrow(AppError);
+        });
+
+        it('throws 403 if driver does not own delivery', async () => {
+            prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+            prismaMock.driverProfile.findUnique.mockResolvedValueOnce({ id: 'dp-1' } as any);
+            prismaMock.delivery.findUnique.mockResolvedValueOnce({
+                id: 'del-1',
+                driverId: 'dp-other',
+                status: 'IN_TRANSIT',
+                order: { customer: { userId: 'cust-user-1' } },
+            } as any);
+            const err = await updateLocation(req, res).catch((e) => e);
+            expect(err).toBeInstanceOf(AppError);
+            expect((err as AppError).statusCode).toBe(403);
+        });
+
+        it('throws 400 if delivery is COMPLETED', async () => {
+            prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+            prismaMock.driverProfile.findUnique.mockResolvedValueOnce({ id: 'dp-1' } as any);
+            prismaMock.delivery.findUnique.mockResolvedValueOnce({
+                id: 'del-1',
+                driverId: 'dp-1',
+                status: 'COMPLETED',
+                order: { customer: { userId: 'cust-user-1' } },
+            } as any);
+            const err = await updateLocation(req, res).catch((e) => e);
+            expect(err).toBeInstanceOf(AppError);
+            expect((err as AppError).statusCode).toBe(400);
+        });
+
+        it('updates driver coordinates and emits driver:location to customer room', async () => {
+            prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+            prismaMock.driverProfile.findUnique.mockResolvedValueOnce({ id: 'dp-1', userId: 'user-1' } as any);
+            prismaMock.delivery.findUnique.mockResolvedValueOnce({
+                id: 'del-1',
+                driverId: 'dp-1',
+                status: 'IN_TRANSIT',
+                order: { customer: { userId: 'cust-user-1' } },
+            } as any);
+            prismaMock.driverProfile.update.mockResolvedValueOnce({} as any);
+
+            await updateLocation(req, res);
+
+            expect(prismaMock.driverProfile.update).toHaveBeenCalledWith(
+                expect.objectContaining({ where: { id: 'dp-1' }, data: { currentLat: 37.77, currentLng: -122.41 } }),
+            );
+            expect(mockTo).toHaveBeenCalledWith('customer:cust-user-1');
+            expect(mockEmit).toHaveBeenCalledWith(
+                'driver:location',
+                expect.objectContaining({ deliveryId: 'del-1', lat: 37.77, lng: -122.41 }),
+            );
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({ success: true });
+        });
+
+        it('emits only to customer room, not restaurant', async () => {
+            prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+            prismaMock.driverProfile.findUnique.mockResolvedValueOnce({ id: 'dp-1', userId: 'user-1' } as any);
+            prismaMock.delivery.findUnique.mockResolvedValueOnce({
+                id: 'del-1',
+                driverId: 'dp-1',
+                status: 'IN_TRANSIT',
+                order: { customer: { userId: 'cust-user-1' } },
+            } as any);
+            prismaMock.driverProfile.update.mockResolvedValueOnce({} as any);
+
+            await updateLocation(req, res);
+
+            expect(mockTo).toHaveBeenCalledTimes(1);
+            expect(mockTo).toHaveBeenCalledWith('customer:cust-user-1');
+        });
+    });
+
+    // ─── getDriverLocation ────────────────────────────────────────────────────
+
+    describe('getDriverLocation', () => {
+        beforeEach(() => {
+            req = {
+                user: { id: 'user-1', role: 'CUSTOMER' },
+                params: { id: 'del-1' },
+            };
+        });
+
+        it('throws 401 if unauthenticated', async () => {
+            req.user = undefined;
+            await expect(getDriverLocation(req, res)).rejects.toThrow(AppError);
+        });
+
+        it('throws 404 if customer profile not found', async () => {
+            prismaMock.customerProfile.findUnique.mockResolvedValueOnce(null);
+            await expect(getDriverLocation(req, res)).rejects.toThrow(AppError);
+        });
+
+        it('throws 404 if delivery not found', async () => {
+            prismaMock.customerProfile.findUnique.mockResolvedValueOnce({ id: 'cp-1' } as any);
+            prismaMock.delivery.findUnique.mockResolvedValueOnce(null);
+            await expect(getDriverLocation(req, res)).rejects.toThrow(AppError);
+        });
+
+        it('throws 403 if customer does not own delivery', async () => {
+            prismaMock.customerProfile.findUnique.mockResolvedValueOnce({ id: 'cp-1' } as any);
+            prismaMock.delivery.findUnique.mockResolvedValueOnce({
+                id: 'del-1',
+                order: { customerId: 'cp-other' },
+                driver: { currentLat: 37.77, currentLng: -122.41 },
+            } as any);
+            const err = await getDriverLocation(req, res).catch((e) => e);
+            expect(err).toBeInstanceOf(AppError);
+            expect((err as AppError).statusCode).toBe(403);
+        });
+
+        it('throws 400 if delivery is COMPLETED', async () => {
+            prismaMock.customerProfile.findUnique.mockResolvedValueOnce({ id: 'cp-1' } as any);
+            prismaMock.delivery.findUnique.mockResolvedValueOnce({
+                id: 'del-1',
+                status: 'COMPLETED',
+                order: { customerId: 'cp-1' },
+                driver: { currentLat: 37.77, currentLng: -122.41 },
+            } as any);
+            const err = await getDriverLocation(req, res).catch((e) => e);
+            expect(err).toBeInstanceOf(AppError);
+            expect((err as AppError).statusCode).toBe(400);
+        });
+
+        it('returns lat/lng when driver has sent location', async () => {
+            prismaMock.customerProfile.findUnique.mockResolvedValueOnce({ id: 'cp-1' } as any);
+            prismaMock.delivery.findUnique.mockResolvedValueOnce({
+                id: 'del-1',
+                order: { customerId: 'cp-1' },
+                driver: { currentLat: 37.77, currentLng: -122.41 },
+            } as any);
+
+            await getDriverLocation(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({
+                success: true,
+                data: { deliveryId: 'del-1', lat: 37.77, lng: -122.41 },
+            });
+        });
+
+        it('returns null lat/lng when driver has not sent location yet', async () => {
+            prismaMock.customerProfile.findUnique.mockResolvedValueOnce({ id: 'cp-1' } as any);
+            prismaMock.delivery.findUnique.mockResolvedValueOnce({
+                id: 'del-1',
+                order: { customerId: 'cp-1' },
+                driver: { currentLat: null, currentLng: null },
+            } as any);
+
+            await getDriverLocation(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({
+                success: true,
+                data: { deliveryId: 'del-1', lat: null, lng: null },
+            });
+        });
+
+        it('queries delivery with correct include shape', async () => {
+            prismaMock.customerProfile.findUnique.mockResolvedValueOnce({ id: 'cp-1' } as any);
+            prismaMock.delivery.findUnique.mockResolvedValueOnce({
+                id: 'del-1',
+                order: { customerId: 'cp-1' },
+                driver: { currentLat: 37.77, currentLng: -122.41 },
+            } as any);
+
+            await getDriverLocation(req, res);
+
+            expect(prismaMock.delivery.findUnique).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: 'del-1' },
+                    include: expect.objectContaining({
+                        order: expect.anything(),
+                        driver: expect.anything(),
+                    }),
+                }),
             );
         });
     });
