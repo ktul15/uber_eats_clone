@@ -1,11 +1,19 @@
+import 'dart:async';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:customer_app/features/auth/data/data_sources/auth_api_client.dart';
 import 'package:customer_app/features/auth/domain/models/user.dart';
 import 'package:customer_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:customer_app/shared/providers/dio_provider.dart';
+import 'package:customer_app/shared/providers/fcm_provider.dart';
 
 part 'auth_providers.g.dart';
+
+Future<void> _registerFcmToken(Ref ref) async {
+  final token = await FirebaseMessaging.instance.getToken();
+  if (token != null) await ref.read(fcmApiClientProvider).registerToken(token);
+}
 
 // --- Infrastructure Providers ---
 
@@ -48,6 +56,7 @@ class Login extends _$Login {
     });
     if (state.hasValue && state.value != null) {
       ref.invalidate(isAuthenticatedProvider);
+      unawaited(_registerFcmToken(ref));
     }
   }
 }
@@ -77,6 +86,7 @@ class Register extends _$Register {
     });
     if (state.hasValue && state.value != null) {
       ref.invalidate(isAuthenticatedProvider);
+      unawaited(_registerFcmToken(ref));
     }
   }
 }

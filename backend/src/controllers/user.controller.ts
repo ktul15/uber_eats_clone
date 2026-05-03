@@ -47,6 +47,23 @@ export const getProfile = asyncHandler(async (req: AuthRequest, res: Response) =
     });
 });
 
+export const registerFcmToken = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) throw AppError.unauthorized('User not authenticated');
+
+    const { fcmToken } = req.body;
+    if (!fcmToken || typeof fcmToken !== 'string' || fcmToken.trim() === '') {
+        throw AppError.badRequest('fcmToken is required');
+    }
+
+    await prisma.user.update({
+        where: { id: userId },
+        data: { fcmToken: fcmToken.trim() },
+    });
+
+    res.status(200).json({ success: true, data: { message: 'FCM token registered' } });
+});
+
 export const updateProfile = asyncHandler(async (req: AuthRequest, res: Response) => {
     const userRole = req.user?.role;
     const userId = req.user?.id;

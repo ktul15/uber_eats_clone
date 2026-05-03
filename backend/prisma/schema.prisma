@@ -46,6 +46,8 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  fcmToken        String?
+
   customerProfile CustomerProfile?
   driverProfile   DriverProfile?
   ownerProfile    OwnerProfile?

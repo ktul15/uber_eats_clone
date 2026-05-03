@@ -13,4 +13,7 @@ class ApiConstants {
 
   // Cart endpoints
   static const String cart = '/api/cart';
+
+  // Notification endpoints
+  static const String fcmToken = '/api/users/fcm-token';
 }
