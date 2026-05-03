@@ -9,6 +9,53 @@ part of 'active_delivery_providers.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
+@ProviderFor(directionsService)
+final directionsServiceProvider = DirectionsServiceProvider._();
+
+final class DirectionsServiceProvider
+    extends
+        $FunctionalProvider<
+          DirectionsService,
+          DirectionsService,
+          DirectionsService
+        >
+    with $Provider<DirectionsService> {
+  DirectionsServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'directionsServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$directionsServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<DirectionsService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  DirectionsService create(Ref ref) {
+    return directionsService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DirectionsService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DirectionsService>(value),
+    );
+  }
+}
+
+String _$directionsServiceHash() => r'234020d264f059b632f17518baa051e420d2c8c6';
+
 @ProviderFor(ActiveDeliveryNotifier)
 final activeDeliveryProvider = ActiveDeliveryNotifierFamily._();
 
@@ -60,7 +107,7 @@ final class ActiveDeliveryNotifierProvider
 }
 
 String _$activeDeliveryNotifierHash() =>
-    r'6db5e2d041213e95c2cb38aeb2599d93ab97d227';
+    r'0cd909a2f2f5552f4d7788c47a0b24ddd1b68cef';
 
 final class ActiveDeliveryNotifierFamily extends $Family
     with

@@ -36,6 +36,7 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
   LatLng? _animatedDriverPos;
   LatLng? _animStart;
   LatLng? _animEnd;
+  bool _routeFitted = false;
 
   @override
   void initState() {
@@ -72,15 +73,57 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
     );
   }
 
+  void _maybeFollowDriver(LatLng target) {
+    if (_routeFitted) return;
+    _mapController.future
+        .then((c) => c.animateCamera(CameraUpdate.newLatLng(target)));
+  }
+
+  Future<void> _fitRouteBounds(
+      List<LatLng> points, double destLat, double destLng) async {
+    if (points.isEmpty) return;
+    double minLat = points.first.latitude, maxLat = points.first.latitude;
+    double minLng = points.first.longitude, maxLng = points.first.longitude;
+    for (final p in points) {
+      if (p.latitude < minLat) minLat = p.latitude;
+      if (p.latitude > maxLat) maxLat = p.latitude;
+      if (p.longitude < minLng) minLng = p.longitude;
+      if (p.longitude > maxLng) maxLng = p.longitude;
+    }
+    minLat = minLat < destLat ? minLat : destLat;
+    maxLat = maxLat > destLat ? maxLat : destLat;
+    minLng = minLng < destLng ? minLng : destLng;
+    maxLng = maxLng > destLng ? maxLng : destLng;
+    final c = await _mapController.future;
+    c.animateCamera(CameraUpdate.newLatLngBounds(
+      LatLngBounds(
+        southwest: LatLng(minLat, minLng),
+        northeast: LatLng(maxLat, maxLng),
+      ),
+      64.0,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final deliveryState =
-        ref.watch(activeDeliveryProvider(widget.orderId));
+    final deliveryState = ref.watch(activeDeliveryProvider(widget.orderId));
     final restaurantName =
         widget.extra?['restaurantName'] as String? ?? 'Order Tracking';
 
-    ref.listen(activeDeliveryProvider(widget.orderId), (_, next) {
+    ref.listen(activeDeliveryProvider(widget.orderId), (prev, next) {
+      if (next.driverLat == prev?.driverLat &&
+          next.driverLng == prev?.driverLng) {
+        if (!_routeFitted &&
+            next.routePoints.isNotEmpty &&
+            next.destination != null) {
+          _routeFitted = true;
+          _fitRouteBounds(next.routePoints, next.destination!.latitude,
+              next.destination!.longitude);
+        }
+        return;
+      }
+
       final lat = next.driverLat;
       final lng = next.driverLng;
       if (lat == null || lng == null) return;
@@ -92,8 +135,7 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
           _animStart = newTarget;
           _animEnd = newTarget;
         });
-        _mapController.future.then((c) =>
-            c.animateCamera(CameraUpdate.newLatLng(newTarget)));
+        _maybeFollowDriver(newTarget);
         return;
       }
 
@@ -106,8 +148,15 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
         ..reset()
         ..forward();
 
-      _mapController.future.then((c) =>
-          c.animateCamera(CameraUpdate.newLatLng(newTarget)));
+      _maybeFollowDriver(newTarget);
+
+      if (!_routeFitted &&
+          next.routePoints.isNotEmpty &&
+          next.destination != null) {
+        _routeFitted = true;
+        _fitRouteBounds(next.routePoints, next.destination!.latitude,
+            next.destination!.longitude);
+      }
     });
 
     final isDelivered = deliveryState.status == 'COMPLETED';
@@ -134,7 +183,6 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
       ),
       body: Column(
         children: [
-          // Delivered banner
           if (isDelivered)
             Container(
               width: double.infinity,
@@ -149,12 +197,35 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
                 ),
               ),
             ),
-          // Map
+          if (deliveryState.etaMinutes != null && !isDelivered)
+            Container(
+              width: double.infinity,
+              color: theme.colorScheme.secondaryContainer,
+              padding:
+                  const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.access_time_outlined,
+                    size: 16,
+                    color: theme.colorScheme.onSecondaryContainer,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Arriving in ~${deliveryState.etaMinutes} min',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSecondaryContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           SizedBox(
             height: 260,
             child: _buildMap(deliveryState, theme),
           ),
-          // Scrollable content below map
           Expanded(
             child: SingleChildScrollView(
               child: Column(
@@ -251,6 +322,36 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
       );
     }
 
+    final markers = <Marker>{
+      Marker(
+        markerId: const MarkerId('driver'),
+        position: _animatedDriverPos!,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        infoWindow: InfoWindow(
+          title: deliveryState.driverName ?? 'Your Driver',
+        ),
+      ),
+    };
+
+    if (deliveryState.destination != null) {
+      markers.add(Marker(
+        markerId: const MarkerId('destination'),
+        position: deliveryState.destination!,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        infoWindow: const InfoWindow(title: 'Delivery Location'),
+      ));
+    }
+
+    final polylines = <Polyline>{};
+    if (deliveryState.routePoints.isNotEmpty) {
+      polylines.add(Polyline(
+        polylineId: const PolylineId('route'),
+        points: deliveryState.routePoints,
+        color: theme.colorScheme.primary,
+        width: 5,
+      ));
+    }
+
     return GoogleMap(
       onMapCreated: (controller) {
         if (!_mapController.isCompleted) {
@@ -261,18 +362,8 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
         target: _animatedDriverPos!,
         zoom: 15,
       ),
-      markers: {
-        Marker(
-          markerId: const MarkerId('driver'),
-          position: _animatedDriverPos!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueBlue,
-          ),
-          infoWindow: InfoWindow(
-            title: deliveryState.driverName ?? 'Your Driver',
-          ),
-        ),
-      },
+      markers: markers,
+      polylines: polylines,
       myLocationButtonEnabled: false,
       zoomControlsEnabled: false,
     );
