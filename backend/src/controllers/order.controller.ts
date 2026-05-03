@@ -7,6 +7,7 @@ import { getIO } from '../socket/index';
 import { rooms } from '../socket/rooms';
 import { OrderStatus } from '@prisma/client';
 import { haversineKm } from '../utils/haversine';
+import { sendPushNotification, sendPushNotificationToMany } from '../utils/fcm';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const Stripe = require('stripe');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', { apiVersion: '2025-03-31.basil' });
@@ -122,7 +123,10 @@ export const placeOrder = asyncHandler(async (req: AuthRequest, res: Response): 
 
         return tx.order.findUnique({
             where: { id: newOrder.id },
-            include: { orderItems: { include: { menuItem: true } }, restaurant: true },
+            include: {
+                orderItems: { include: { menuItem: true } },
+                restaurant: { include: { owner: { select: { fcmToken: true } } } },
+            },
         });
     });
 
@@ -133,6 +137,14 @@ export const placeOrder = asyncHandler(async (req: AuthRequest, res: Response): 
             totalAmount: order.totalAmount,
             createdAt: order.createdAt,
         });
+
+        if (order.restaurant.owner?.fcmToken) {
+            void sendPushNotification(order.restaurant.owner.fcmToken, {
+                title: 'New Order Received',
+                body: `New order worth $${Number(order.totalAmount).toFixed(2)} at ${order.restaurant.name}`,
+                data: { orderId: order.id },
+            });
+        }
     }
 
     res.status(201).json({ success: true, data: order });
@@ -204,7 +216,7 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
         where: { id: orderId },
         select: {
             restaurant: { select: { ownerId: true, name: true, lat: true, lng: true } },
-            customer: { select: { userId: true } },
+            customer: { select: { userId: true, user: { select: { fcmToken: true } } } },
         },
     });
 
@@ -223,10 +235,22 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
         updatedAt: updated.updatedAt,
     });
 
+    const customerToken = order.customer.user?.fcmToken;
+    const customerMessages: Partial<Record<OrderStatus, { title: string; body: string }>> = {
+        ACCEPTED: { title: 'Order Accepted', body: 'Your order has been accepted!' },
+        PREPARING: { title: 'Order Being Prepared', body: 'Your order is being prepared!' },
+        READY: { title: 'Order Almost Ready', body: 'Your order is ready for pickup by a driver!' },
+        CANCELLED: { title: 'Order Cancelled', body: 'Your order has been cancelled.' },
+    };
+    const customerMsg = customerMessages[status as OrderStatus];
+    if (customerToken && customerMsg) {
+        void sendPushNotification(customerToken, { ...customerMsg, data: { orderId: updated.id } });
+    }
+
     if (status === 'READY') {
         const availableDrivers = await prisma.driverProfile.findMany({
             where: { isAvailable: true },
-            select: { userId: true, currentLat: true, currentLng: true },
+            select: { userId: true, currentLat: true, currentLng: true, user: { select: { fcmToken: true } } },
         });
         const io = getIO();
         const payload = {
@@ -236,6 +260,7 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
             deliveryAddress: updated.deliveryAddress,
             totalAmount: updated.totalAmount,
         };
+        const nearbyDriverTokens: string[] = [];
         availableDrivers.forEach((driver) => {
             if (
                 order.restaurant.lat != null &&
@@ -252,7 +277,21 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
                 if (dist > 10) return;
             }
             io.to(rooms.driver(driver.userId)).emit('order:available', payload);
+            if (driver.user.fcmToken) nearbyDriverTokens.push(driver.user.fcmToken);
         });
+        if (nearbyDriverTokens.length > 0) {
+            const staleTokens = await sendPushNotificationToMany(nearbyDriverTokens, {
+                title: 'New Delivery Available',
+                body: `New order near ${updated.restaurant.name}!`,
+                data: { orderId: updated.id },
+            });
+            if (staleTokens.length > 0) {
+                await prisma.user.updateMany({
+                    where: { fcmToken: { in: staleTokens } },
+                    data: { fcmToken: null },
+                });
+            }
+        }
     }
 
     res.status(200).json({ success: true, data: updated });

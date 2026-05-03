@@ -6,6 +6,7 @@ import { AuthRequest } from '../types/auth.types';
 import { getIO } from '../socket/index';
 import { rooms } from '../socket/rooms';
 import { DeliveryStatus } from '@prisma/client';
+import { sendPushNotification } from '../utils/fcm';
 
 const NEXT_STATUS: Partial<Record<DeliveryStatus, DeliveryStatus>> = {
     ASSIGNED: 'AT_RESTAURANT',
@@ -44,7 +45,7 @@ export const acceptDelivery = asyncHandler(async (req: AuthRequest, res: Respons
                 order: {
                     include: {
                         restaurant: { select: { id: true } },
-                        customer: { select: { userId: true } },
+                        customer: { select: { userId: true, user: { select: { fcmToken: true } } } },
                     },
                 },
             },
@@ -67,6 +68,15 @@ export const acceptDelivery = asyncHandler(async (req: AuthRequest, res: Respons
     };
     io.to(rooms.customer(delivery.order.customer.userId)).emit('delivery:assigned', assignedPayload);
     io.to(rooms.restaurant(delivery.order.restaurant.id)).emit('delivery:assigned', assignedPayload);
+
+    const customerToken = delivery.order.customer.user?.fcmToken;
+    if (customerToken) {
+        void sendPushNotification(customerToken, {
+            title: 'Driver Assigned',
+            body: `${delivery.driver.name} is on their way to the restaurant!`,
+            data: { orderId: delivery.orderId },
+        });
+    }
 
     res.status(201).json({ success: true, data: delivery });
 });
@@ -93,7 +103,7 @@ export const updateDeliveryStatus = asyncHandler(async (req: AuthRequest, res: R
                 order: {
                     include: {
                         restaurant: { select: { id: true } },
-                        customer: { select: { userId: true } },
+                        customer: { select: { userId: true, user: { select: { fcmToken: true } } } },
                     },
                 },
             },
@@ -114,7 +124,7 @@ export const updateDeliveryStatus = asyncHandler(async (req: AuthRequest, res: R
                 order: {
                     include: {
                         restaurant: { select: { id: true } },
-                        customer: { select: { userId: true } },
+                        customer: { select: { userId: true, user: { select: { fcmToken: true } } } },
                     },
                 },
             },
@@ -141,6 +151,17 @@ export const updateDeliveryStatus = asyncHandler(async (req: AuthRequest, res: R
     };
     io.to(rooms.customer(delivery.order.customer.userId)).emit('delivery:status_updated', statusPayload);
     io.to(rooms.restaurant(delivery.order.restaurant.id)).emit('delivery:status_updated', statusPayload);
+
+    const customerToken = delivery.order.customer.user?.fcmToken;
+    const deliveryMessages: Partial<Record<DeliveryStatus, { title: string; body: string }>> = {
+        AT_RESTAURANT: { title: 'Driver Arrived', body: 'Your driver is at the restaurant!' },
+        IN_TRANSIT: { title: 'Order On The Way', body: 'Your order is on its way!' },
+        COMPLETED: { title: 'Order Delivered', body: 'Your order has been delivered. Enjoy!' },
+    };
+    const deliveryMsg = deliveryMessages[delivery.status];
+    if (customerToken && deliveryMsg) {
+        void sendPushNotification(customerToken, { ...deliveryMsg, data: { orderId: delivery.orderId } });
+    }
 
     res.status(200).json({ success: true, data: delivery });
 });
