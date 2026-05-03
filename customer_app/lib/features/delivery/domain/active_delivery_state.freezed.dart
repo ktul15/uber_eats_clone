@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ActiveDeliveryState {
 
- String? get deliveryId; String get status; String? get driverName; String? get driverVehicleType; double? get driverLat; double? get driverLng;
+ String? get deliveryId; String get status; String? get driverName; String? get driverVehicleType; double? get driverLat; double? get driverLng; String? get deliveryAddress; List<LatLng> get routePoints; int? get etaMinutes; LatLng? get destination;
 /// Create a copy of ActiveDeliveryState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $ActiveDeliveryStateCopyWith<ActiveDeliveryState> get copyWith => _$ActiveDelive
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ActiveDeliveryState&&(identical(other.deliveryId, deliveryId) || other.deliveryId == deliveryId)&&(identical(other.status, status) || other.status == status)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.driverVehicleType, driverVehicleType) || other.driverVehicleType == driverVehicleType)&&(identical(other.driverLat, driverLat) || other.driverLat == driverLat)&&(identical(other.driverLng, driverLng) || other.driverLng == driverLng));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ActiveDeliveryState&&(identical(other.deliveryId, deliveryId) || other.deliveryId == deliveryId)&&(identical(other.status, status) || other.status == status)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.driverVehicleType, driverVehicleType) || other.driverVehicleType == driverVehicleType)&&(identical(other.driverLat, driverLat) || other.driverLat == driverLat)&&(identical(other.driverLng, driverLng) || other.driverLng == driverLng)&&(identical(other.deliveryAddress, deliveryAddress) || other.deliveryAddress == deliveryAddress)&&const DeepCollectionEquality().equals(other.routePoints, routePoints)&&(identical(other.etaMinutes, etaMinutes) || other.etaMinutes == etaMinutes)&&(identical(other.destination, destination) || other.destination == destination));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,deliveryId,status,driverName,driverVehicleType,driverLat,driverLng);
+int get hashCode => Object.hash(runtimeType,deliveryId,status,driverName,driverVehicleType,driverLat,driverLng,deliveryAddress,const DeepCollectionEquality().hash(routePoints),etaMinutes,destination);
 
 @override
 String toString() {
-  return 'ActiveDeliveryState(deliveryId: $deliveryId, status: $status, driverName: $driverName, driverVehicleType: $driverVehicleType, driverLat: $driverLat, driverLng: $driverLng)';
+  return 'ActiveDeliveryState(deliveryId: $deliveryId, status: $status, driverName: $driverName, driverVehicleType: $driverVehicleType, driverLat: $driverLat, driverLng: $driverLng, deliveryAddress: $deliveryAddress, routePoints: $routePoints, etaMinutes: $etaMinutes, destination: $destination)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $ActiveDeliveryStateCopyWith<$Res>  {
   factory $ActiveDeliveryStateCopyWith(ActiveDeliveryState value, $Res Function(ActiveDeliveryState) _then) = _$ActiveDeliveryStateCopyWithImpl;
 @useResult
 $Res call({
- String? deliveryId, String status, String? driverName, String? driverVehicleType, double? driverLat, double? driverLng
+ String? deliveryId, String status, String? driverName, String? driverVehicleType, double? driverLat, double? driverLng, String? deliveryAddress, List<LatLng> routePoints, int? etaMinutes, LatLng? destination
 });
 
 
@@ -62,7 +62,7 @@ class _$ActiveDeliveryStateCopyWithImpl<$Res>
 
 /// Create a copy of ActiveDeliveryState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? deliveryId = freezed,Object? status = null,Object? driverName = freezed,Object? driverVehicleType = freezed,Object? driverLat = freezed,Object? driverLng = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? deliveryId = freezed,Object? status = null,Object? driverName = freezed,Object? driverVehicleType = freezed,Object? driverLat = freezed,Object? driverLng = freezed,Object? deliveryAddress = freezed,Object? routePoints = null,Object? etaMinutes = freezed,Object? destination = freezed,}) {
   return _then(_self.copyWith(
 deliveryId: freezed == deliveryId ? _self.deliveryId : deliveryId // ignore: cast_nullable_to_non_nullable
 as String?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
@@ -70,7 +70,11 @@ as String,driverName: freezed == driverName ? _self.driverName : driverName // i
 as String?,driverVehicleType: freezed == driverVehicleType ? _self.driverVehicleType : driverVehicleType // ignore: cast_nullable_to_non_nullable
 as String?,driverLat: freezed == driverLat ? _self.driverLat : driverLat // ignore: cast_nullable_to_non_nullable
 as double?,driverLng: freezed == driverLng ? _self.driverLng : driverLng // ignore: cast_nullable_to_non_nullable
-as double?,
+as double?,deliveryAddress: freezed == deliveryAddress ? _self.deliveryAddress : deliveryAddress // ignore: cast_nullable_to_non_nullable
+as String?,routePoints: null == routePoints ? _self.routePoints : routePoints // ignore: cast_nullable_to_non_nullable
+as List<LatLng>,etaMinutes: freezed == etaMinutes ? _self.etaMinutes : etaMinutes // ignore: cast_nullable_to_non_nullable
+as int?,destination: freezed == destination ? _self.destination : destination // ignore: cast_nullable_to_non_nullable
+as LatLng?,
   ));
 }
 
@@ -155,10 +159,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? deliveryId,  String status,  String? driverName,  String? driverVehicleType,  double? driverLat,  double? driverLng)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? deliveryId,  String status,  String? driverName,  String? driverVehicleType,  double? driverLat,  double? driverLng,  String? deliveryAddress,  List<LatLng> routePoints,  int? etaMinutes,  LatLng? destination)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ActiveDeliveryState() when $default != null:
-return $default(_that.deliveryId,_that.status,_that.driverName,_that.driverVehicleType,_that.driverLat,_that.driverLng);case _:
+return $default(_that.deliveryId,_that.status,_that.driverName,_that.driverVehicleType,_that.driverLat,_that.driverLng,_that.deliveryAddress,_that.routePoints,_that.etaMinutes,_that.destination);case _:
   return orElse();
 
 }
@@ -176,10 +180,10 @@ return $default(_that.deliveryId,_that.status,_that.driverName,_that.driverVehic
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? deliveryId,  String status,  String? driverName,  String? driverVehicleType,  double? driverLat,  double? driverLng)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? deliveryId,  String status,  String? driverName,  String? driverVehicleType,  double? driverLat,  double? driverLng,  String? deliveryAddress,  List<LatLng> routePoints,  int? etaMinutes,  LatLng? destination)  $default,) {final _that = this;
 switch (_that) {
 case _ActiveDeliveryState():
-return $default(_that.deliveryId,_that.status,_that.driverName,_that.driverVehicleType,_that.driverLat,_that.driverLng);case _:
+return $default(_that.deliveryId,_that.status,_that.driverName,_that.driverVehicleType,_that.driverLat,_that.driverLng,_that.deliveryAddress,_that.routePoints,_that.etaMinutes,_that.destination);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -196,10 +200,10 @@ return $default(_that.deliveryId,_that.status,_that.driverName,_that.driverVehic
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? deliveryId,  String status,  String? driverName,  String? driverVehicleType,  double? driverLat,  double? driverLng)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? deliveryId,  String status,  String? driverName,  String? driverVehicleType,  double? driverLat,  double? driverLng,  String? deliveryAddress,  List<LatLng> routePoints,  int? etaMinutes,  LatLng? destination)?  $default,) {final _that = this;
 switch (_that) {
 case _ActiveDeliveryState() when $default != null:
-return $default(_that.deliveryId,_that.status,_that.driverName,_that.driverVehicleType,_that.driverLat,_that.driverLng);case _:
+return $default(_that.deliveryId,_that.status,_that.driverName,_that.driverVehicleType,_that.driverLat,_that.driverLng,_that.deliveryAddress,_that.routePoints,_that.etaMinutes,_that.destination);case _:
   return null;
 
 }
@@ -211,7 +215,7 @@ return $default(_that.deliveryId,_that.status,_that.driverName,_that.driverVehic
 
 
 class _ActiveDeliveryState implements ActiveDeliveryState {
-  const _ActiveDeliveryState({this.deliveryId, this.status = 'WAITING', this.driverName, this.driverVehicleType, this.driverLat, this.driverLng});
+  const _ActiveDeliveryState({this.deliveryId, this.status = 'WAITING', this.driverName, this.driverVehicleType, this.driverLat, this.driverLng, this.deliveryAddress, final  List<LatLng> routePoints = const [], this.etaMinutes, this.destination}): _routePoints = routePoints;
   
 
 @override final  String? deliveryId;
@@ -220,6 +224,16 @@ class _ActiveDeliveryState implements ActiveDeliveryState {
 @override final  String? driverVehicleType;
 @override final  double? driverLat;
 @override final  double? driverLng;
+@override final  String? deliveryAddress;
+ final  List<LatLng> _routePoints;
+@override@JsonKey() List<LatLng> get routePoints {
+  if (_routePoints is EqualUnmodifiableListView) return _routePoints;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_routePoints);
+}
+
+@override final  int? etaMinutes;
+@override final  LatLng? destination;
 
 /// Create a copy of ActiveDeliveryState
 /// with the given fields replaced by the non-null parameter values.
@@ -231,16 +245,16 @@ _$ActiveDeliveryStateCopyWith<_ActiveDeliveryState> get copyWith => __$ActiveDel
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ActiveDeliveryState&&(identical(other.deliveryId, deliveryId) || other.deliveryId == deliveryId)&&(identical(other.status, status) || other.status == status)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.driverVehicleType, driverVehicleType) || other.driverVehicleType == driverVehicleType)&&(identical(other.driverLat, driverLat) || other.driverLat == driverLat)&&(identical(other.driverLng, driverLng) || other.driverLng == driverLng));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ActiveDeliveryState&&(identical(other.deliveryId, deliveryId) || other.deliveryId == deliveryId)&&(identical(other.status, status) || other.status == status)&&(identical(other.driverName, driverName) || other.driverName == driverName)&&(identical(other.driverVehicleType, driverVehicleType) || other.driverVehicleType == driverVehicleType)&&(identical(other.driverLat, driverLat) || other.driverLat == driverLat)&&(identical(other.driverLng, driverLng) || other.driverLng == driverLng)&&(identical(other.deliveryAddress, deliveryAddress) || other.deliveryAddress == deliveryAddress)&&const DeepCollectionEquality().equals(other._routePoints, _routePoints)&&(identical(other.etaMinutes, etaMinutes) || other.etaMinutes == etaMinutes)&&(identical(other.destination, destination) || other.destination == destination));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,deliveryId,status,driverName,driverVehicleType,driverLat,driverLng);
+int get hashCode => Object.hash(runtimeType,deliveryId,status,driverName,driverVehicleType,driverLat,driverLng,deliveryAddress,const DeepCollectionEquality().hash(_routePoints),etaMinutes,destination);
 
 @override
 String toString() {
-  return 'ActiveDeliveryState(deliveryId: $deliveryId, status: $status, driverName: $driverName, driverVehicleType: $driverVehicleType, driverLat: $driverLat, driverLng: $driverLng)';
+  return 'ActiveDeliveryState(deliveryId: $deliveryId, status: $status, driverName: $driverName, driverVehicleType: $driverVehicleType, driverLat: $driverLat, driverLng: $driverLng, deliveryAddress: $deliveryAddress, routePoints: $routePoints, etaMinutes: $etaMinutes, destination: $destination)';
 }
 
 
@@ -251,7 +265,7 @@ abstract mixin class _$ActiveDeliveryStateCopyWith<$Res> implements $ActiveDeliv
   factory _$ActiveDeliveryStateCopyWith(_ActiveDeliveryState value, $Res Function(_ActiveDeliveryState) _then) = __$ActiveDeliveryStateCopyWithImpl;
 @override @useResult
 $Res call({
- String? deliveryId, String status, String? driverName, String? driverVehicleType, double? driverLat, double? driverLng
+ String? deliveryId, String status, String? driverName, String? driverVehicleType, double? driverLat, double? driverLng, String? deliveryAddress, List<LatLng> routePoints, int? etaMinutes, LatLng? destination
 });
 
 
@@ -268,7 +282,7 @@ class __$ActiveDeliveryStateCopyWithImpl<$Res>
 
 /// Create a copy of ActiveDeliveryState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? deliveryId = freezed,Object? status = null,Object? driverName = freezed,Object? driverVehicleType = freezed,Object? driverLat = freezed,Object? driverLng = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? deliveryId = freezed,Object? status = null,Object? driverName = freezed,Object? driverVehicleType = freezed,Object? driverLat = freezed,Object? driverLng = freezed,Object? deliveryAddress = freezed,Object? routePoints = null,Object? etaMinutes = freezed,Object? destination = freezed,}) {
   return _then(_ActiveDeliveryState(
 deliveryId: freezed == deliveryId ? _self.deliveryId : deliveryId // ignore: cast_nullable_to_non_nullable
 as String?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
@@ -276,7 +290,11 @@ as String,driverName: freezed == driverName ? _self.driverName : driverName // i
 as String?,driverVehicleType: freezed == driverVehicleType ? _self.driverVehicleType : driverVehicleType // ignore: cast_nullable_to_non_nullable
 as String?,driverLat: freezed == driverLat ? _self.driverLat : driverLat // ignore: cast_nullable_to_non_nullable
 as double?,driverLng: freezed == driverLng ? _self.driverLng : driverLng // ignore: cast_nullable_to_non_nullable
-as double?,
+as double?,deliveryAddress: freezed == deliveryAddress ? _self.deliveryAddress : deliveryAddress // ignore: cast_nullable_to_non_nullable
+as String?,routePoints: null == routePoints ? _self._routePoints : routePoints // ignore: cast_nullable_to_non_nullable
+as List<LatLng>,etaMinutes: freezed == etaMinutes ? _self.etaMinutes : etaMinutes // ignore: cast_nullable_to_non_nullable
+as int?,destination: freezed == destination ? _self.destination : destination // ignore: cast_nullable_to_non_nullable
+as LatLng?,
   ));
 }
 

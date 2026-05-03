@@ -36,4 +36,11 @@ class OrderApiClient {
         .map((item) => OrderDto.fromJson(item as Map<String, dynamic>))
         .toList();
   }
+
+  Future<OrderDto> getOrderById(String orderId) async {
+    final response = await _dio.get('/api/orders/$orderId');
+    return OrderDto.fromJson(
+      (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>,
+    );
+  }
 }
