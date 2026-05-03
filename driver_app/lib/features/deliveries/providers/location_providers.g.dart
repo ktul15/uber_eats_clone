@@ -41,7 +41,7 @@ final class LocationTrackerProvider
   }
 }
 
-String _$locationTrackerHash() => r'f61f65bfed76bf03b8f7e3ab778eb03a6a99f067';
+String _$locationTrackerHash() => r'8303de782fa84e7fa0700c714c184b9a1346e2b4';
 
 abstract class _$LocationTracker extends $Notifier<void> {
   void build();

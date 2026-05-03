@@ -7,6 +7,9 @@ import { initSocket } from './socket/index';
 
 dotenv.config();
 
+import { initFirebase } from './utils/firebase';
+initFirebase();
+
 const app = express();
 const port = process.env.PORT || 8000;
 

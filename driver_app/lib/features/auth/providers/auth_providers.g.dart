@@ -147,7 +147,7 @@ final class LoginProvider extends $AsyncNotifierProvider<Login, User?> {
   Login create() => Login();
 }
 
-String _$loginHash() => r'877584faa8439930bde0e908a519db950a22cd7f';
+String _$loginHash() => r'ede6f0cc18643116b9776150f04a4358671a6593';
 
 abstract class _$Login extends $AsyncNotifier<User?> {
   FutureOr<User?> build();
@@ -190,7 +190,7 @@ final class RegisterProvider extends $AsyncNotifierProvider<Register, User?> {
   Register create() => Register();
 }
 
-String _$registerHash() => r'7c7819fae7d5f32ff97172e1f2e5ad8ffa76f6e6';
+String _$registerHash() => r'77b9d3207dd9554904c441a2c2e462db1ec92645';
 
 abstract class _$Register extends $AsyncNotifier<User?> {
   FutureOr<User?> build();
