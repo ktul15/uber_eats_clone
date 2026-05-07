@@ -16,4 +16,7 @@ class AppRoutes {
 
   static const String activeOrders = '/active-orders';
   static const String activeOrdersName = 'activeOrders';
+
+  static const String orderHistory = '/order-history';
+  static const String orderHistoryName = 'orderHistory';
 }

@@ -255,14 +255,7 @@ class _OrderItemRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 bool _isActiveDelivery(String status) {
-  const activeStatuses = {
-    'ACCEPTED',
-    'PREPARING',
-    'READY',
-    'READY_FOR_PICKUP',
-    'OUT_FOR_DELIVERY',
-    'PICKED_UP',
-  };
+  const activeStatuses = {'ACCEPTED', 'PREPARING', 'READY', 'PICKED_UP'};
   return activeStatuses.contains(status.toUpperCase());
 }
 
@@ -293,7 +286,7 @@ class _StatusChip extends StatelessWidget {
       'ACCEPTED' => (const Color(0xFF1565C0), 'Accepted'),
       'PREPARING' => (const Color(0xFF1565C0), 'Preparing'),
       'READY' => (const Color(0xFF00695C), 'Ready'),
-      'OUT_FOR_DELIVERY' => (const Color(0xFF283593), 'On the way'),
+      'PICKED_UP' => (const Color(0xFF283593), 'On the way'),
       'DELIVERED' => (const Color(0xFF2E7D32), 'Delivered'),
       'CANCELLED' => (const Color(0xFFC62828), 'Cancelled'),
       _ => (const Color(0xFF546E7A), status),

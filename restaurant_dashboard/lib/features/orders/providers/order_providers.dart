@@ -60,3 +60,24 @@ class ActiveOrdersController extends _$ActiveOrdersController {
     });
   }
 }
+
+@riverpod
+class OrderHistoryController extends _$OrderHistoryController {
+  static const _historyStatuses = {'DELIVERED', 'CANCELLED'};
+
+  @override
+  FutureOr<List<OrderDto>> build() async {
+    final orders = await ref.read(orderRepositoryProvider).getOrders();
+    return orders.where((o) => _historyStatuses.contains(o.status)).toList();
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final orders = await ref.read(orderRepositoryProvider).getOrders();
+      return orders
+          .where((o) => _historyStatuses.contains(o.status))
+          .toList();
+    });
+  }
+}

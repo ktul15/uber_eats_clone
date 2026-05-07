@@ -136,3 +136,48 @@ abstract class _$ActiveOrdersController extends $AsyncNotifier<List<OrderDto>> {
     element.handleCreate(ref, build);
   }
 }
+
+@ProviderFor(OrderHistoryController)
+final orderHistoryControllerProvider = OrderHistoryControllerProvider._();
+
+final class OrderHistoryControllerProvider
+    extends $AsyncNotifierProvider<OrderHistoryController, List<OrderDto>> {
+  OrderHistoryControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'orderHistoryControllerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$orderHistoryControllerHash();
+
+  @$internal
+  @override
+  OrderHistoryController create() => OrderHistoryController();
+}
+
+String _$orderHistoryControllerHash() =>
+    r'02c8922e8525d38401026b061d628549eda481a5';
+
+abstract class _$OrderHistoryController extends $AsyncNotifier<List<OrderDto>> {
+  FutureOr<List<OrderDto>> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<List<OrderDto>>, List<OrderDto>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<List<OrderDto>>, List<OrderDto>>,
+              AsyncValue<List<OrderDto>>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
