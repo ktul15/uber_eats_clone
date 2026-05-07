@@ -9,6 +9,7 @@ import 'package:restaurant_dashboard/features/profile/presentation/screens/profi
 import 'package:restaurant_dashboard/features/menu/presentation/screens/home_dashboard_screen.dart';
 import 'package:restaurant_dashboard/features/menu/presentation/screens/menu_management_screen.dart';
 import 'package:restaurant_dashboard/features/orders/presentation/screens/active_orders_screen.dart';
+import 'package:restaurant_dashboard/features/orders/presentation/screens/order_history_screen.dart';
 
 part 'router.g.dart';
 
@@ -71,6 +72,11 @@ GoRouter appRouter(Ref ref) {
         path: AppRoutes.activeOrders,
         name: AppRoutes.activeOrdersName,
         builder: (context, state) => const ActiveOrdersScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.orderHistory,
+        name: AppRoutes.orderHistoryName,
+        builder: (context, state) => const OrderHistoryScreen(),
       ),
     ],
   );
