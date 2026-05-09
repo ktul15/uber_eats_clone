@@ -19,6 +19,27 @@ const getCustomerProfileId = async (userId: string): Promise<string> => {
     return profile.id;
 };
 
+const orderInclude = {
+    orderItems: { include: { menuItem: true } },
+    restaurant: true,
+    review: true,
+};
+
+const updateRestaurantRating = async (
+    tx: Pick<typeof prisma, 'review' | 'restaurant'>,
+    restaurantId: string,
+): Promise<void> => {
+    const aggregate = await tx.review.aggregate({
+        where: { restaurantId },
+        _avg: { rating: true },
+    });
+
+    await tx.restaurant.update({
+        where: { id: restaurantId },
+        data: { rating: aggregate._avg.rating ?? 0 },
+    });
+};
+
 // POST /api/orders/payment-intent
 // Creates a Stripe PaymentIntent for the current cart total.
 // Returns: { clientSecret }
@@ -161,7 +182,7 @@ export const getOrders = asyncHandler(async (req: AuthRequest, res: Response): P
         const customerId = await getCustomerProfileId(userId);
         const orders = await prisma.order.findMany({
             where: { customerId },
-            include: { orderItems: { include: { menuItem: true } }, restaurant: true },
+            include: orderInclude,
             orderBy: { createdAt: 'desc' },
         });
         res.status(200).json({ success: true, data: orders });
@@ -173,7 +194,7 @@ export const getOrders = asyncHandler(async (req: AuthRequest, res: Response): P
         const restaurantIds = restaurants.map((r) => r.id);
         const orders = await prisma.order.findMany({
             where: { restaurantId: { in: restaurantIds } },
-            include: { orderItems: { include: { menuItem: true } }, restaurant: true },
+            include: orderInclude,
             orderBy: { createdAt: 'desc' },
         });
         res.status(200).json({ success: true, data: orders });
@@ -186,18 +207,74 @@ export const getOrders = asyncHandler(async (req: AuthRequest, res: Response): P
 // GET /api/orders/:id
 export const getOrderById = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
     const userId = req.user?.id;
+    const role = req.user?.role;
     if (!userId) throw AppError.unauthorized('Not authenticated');
 
     const orderId = req.params['id'] as string;
 
     const order = await prisma.order.findUnique({
         where: { id: orderId },
-        include: { orderItems: { include: { menuItem: true } }, restaurant: true },
+        include: orderInclude,
     });
 
     if (!order) throw AppError.notFound('Order not found');
 
+    if (role === 'CUSTOMER') {
+        const customerId = await getCustomerProfileId(userId);
+        if (order.customerId !== customerId) throw AppError.forbidden('You cannot access this order');
+    } else if (role === 'OWNER') {
+        if (order.restaurant.ownerId !== userId) throw AppError.forbidden('You do not own this restaurant');
+    } else {
+        throw AppError.forbidden('Access denied');
+    }
+
     res.status(200).json({ success: true, data: order });
+});
+
+export const createOrderReview = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+    const userId = req.user?.id;
+    if (!userId) throw AppError.unauthorized('Not authenticated');
+
+    const orderId = req.params['id'] as string;
+    const { rating, comment } = req.body as { rating?: number; comment?: string };
+    const numericRating = Number(rating);
+
+    if (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
+        throw AppError.badRequest('rating must be an integer between 1 and 5');
+    }
+
+    const customerId = await getCustomerProfileId(userId);
+
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+        const order = await tx.order.findUnique({
+            where: { id: orderId },
+            include: { review: true },
+        });
+
+        if (!order) throw AppError.notFound('Order not found');
+        if (order.customerId !== customerId) throw AppError.forbidden('You cannot review this order');
+        if (order.status !== OrderStatus.DELIVERED) throw AppError.badRequest('Only delivered orders can be reviewed');
+        if (order.review) throw AppError.badRequest('Order has already been reviewed');
+
+        await tx.review.create({
+            data: {
+                orderId: order.id,
+                customerId,
+                restaurantId: order.restaurantId,
+                rating: numericRating,
+                comment: comment?.trim() || null,
+            },
+        });
+
+        await updateRestaurantRating(tx, order.restaurantId);
+
+        return tx.order.findUnique({
+            where: { id: order.id },
+            include: orderInclude,
+        });
+    });
+
+    res.status(201).json({ success: true, data: updatedOrder });
 });
 
 export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {

@@ -23,6 +23,23 @@ abstract class OrderRestaurantDto with _$OrderRestaurantDto {
 }
 
 @freezed
+abstract class OrderReviewDto with _$OrderReviewDto {
+  const factory OrderReviewDto({
+    required String id,
+    required String orderId,
+    required String customerId,
+    required String restaurantId,
+    required int rating,
+    String? comment,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) = _OrderReviewDto;
+
+  factory OrderReviewDto.fromJson(Map<String, dynamic> json) =>
+      _$OrderReviewDtoFromJson(json);
+}
+
+@freezed
 abstract class OrderDto with _$OrderDto {
   const factory OrderDto({
     required String id,
@@ -34,6 +51,7 @@ abstract class OrderDto with _$OrderDto {
     required DateTime createdAt,
     required List<OrderItemDto> orderItems,
     required OrderRestaurantDto restaurant,
+    OrderReviewDto? review,
   }) = _OrderDto;
 
   factory OrderDto.fromJson(Map<String, dynamic> json) =>

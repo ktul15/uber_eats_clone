@@ -21,10 +21,7 @@ class OrdersScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                'Failed to load orders',
-                style: theme.textTheme.titleMedium,
-              ),
+              Text('Failed to load orders', style: theme.textTheme.titleMedium),
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: () => ref.refresh(orderHistoryProvider.future),
@@ -81,16 +78,16 @@ class OrdersScreen extends ConsumerWidget {
 // Order Card
 // ---------------------------------------------------------------------------
 
-class _OrderCard extends StatefulWidget {
+class _OrderCard extends ConsumerStatefulWidget {
   final OrderDto order;
 
   const _OrderCard({required this.order});
 
   @override
-  State<_OrderCard> createState() => _OrderCardState();
+  ConsumerState<_OrderCard> createState() => _OrderCardState();
 }
 
-class _OrderCardState extends State<_OrderCard> {
+class _OrderCardState extends ConsumerState<_OrderCard> {
   bool _expanded = false;
 
   @override
@@ -100,10 +97,12 @@ class _OrderCardState extends State<_OrderCard> {
     final hasItems = order.orderItems.isNotEmpty;
     final date = _formatDate(order.createdAt);
     final itemCount = order.orderItems.length;
+    final isDelivered = order.status.toUpperCase() == 'DELIVERED';
 
     return Semantics(
       button: hasItems,
-      label: '${order.restaurant.name}, ${order.status}, '
+      label:
+          '${order.restaurant.name}, ${order.status}, '
           '\$${order.totalAmount.toStringAsFixed(2)}, '
           '$itemCount item${itemCount == 1 ? '' : 's'}. '
           '${hasItems ? 'Tap to ${_expanded ? 'collapse' : 'expand'} order items.' : ''}',
@@ -116,8 +115,7 @@ class _OrderCardState extends State<_OrderCard> {
           side: BorderSide(color: theme.colorScheme.outlineVariant),
         ),
         child: InkWell(
-          onTap:
-              hasItems ? () => setState(() => _expanded = !_expanded) : null,
+          onTap: hasItems ? () => setState(() => _expanded = !_expanded) : null,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -200,16 +198,254 @@ class _OrderCardState extends State<_OrderCard> {
                     ),
                   ),
                 ],
+                if (isDelivered) ...[
+                  const SizedBox(height: 12),
+                  _ReviewSection(
+                    order: order,
+                    onReview: order.review == null
+                        ? () => _handleReview(context, order)
+                        : null,
+                  ),
+                ],
                 // Expanded item list
                 if (_expanded && hasItems) ...[
                   const Divider(height: 24),
-                  ...order.orderItems.map(
-                    (item) => _OrderItemRow(item: item),
-                  ),
+                  ...order.orderItems.map((item) => _OrderItemRow(item: item)),
                 ],
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleReview(BuildContext context, OrderDto order) async {
+    final submission = await showModalBottomSheet<_ReviewSubmission>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _ReviewSheet(restaurantName: order.restaurant.name),
+    );
+
+    if (submission == null || !context.mounted) return;
+
+    await ref
+        .read(submitReviewProvider.notifier)
+        .execute(
+          orderId: order.id,
+          rating: submission.rating,
+          comment: submission.comment,
+        );
+
+    if (!context.mounted) return;
+    final submitState = ref.read(submitReviewProvider);
+    final messenger = ScaffoldMessenger.of(context);
+
+    if (submitState.hasError) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to submit review: ${submitState.error}'),
+        ),
+      );
+      return;
+    }
+
+    messenger.showSnackBar(const SnackBar(content: Text('Review submitted')));
+  }
+}
+
+class _ReviewSection extends StatelessWidget {
+  final OrderDto order;
+  final VoidCallback? onReview;
+
+  const _ReviewSection({required this.order, required this.onReview});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final review = order.review;
+
+    if (review != null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _StarRating(value: review.rating),
+                const SizedBox(width: 8),
+                Text(
+                  'Reviewed',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            if (review.comment?.trim().isNotEmpty ?? false) ...[
+              const SizedBox(height: 8),
+              Text(review.comment!, style: theme.textTheme.bodyMedium),
+            ],
+          ],
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: onReview,
+        icon: const Icon(Icons.star_outline),
+        label: const Text('Rate Order'),
+      ),
+    );
+  }
+}
+
+class _ReviewSubmission {
+  final int rating;
+  final String? comment;
+
+  const _ReviewSubmission({required this.rating, this.comment});
+}
+
+class _ReviewSheet extends StatefulWidget {
+  final String restaurantName;
+
+  const _ReviewSheet({required this.restaurantName});
+
+  @override
+  State<_ReviewSheet> createState() => _ReviewSheetState();
+}
+
+class _ReviewSheetState extends State<_ReviewSheet> {
+  final _commentController = TextEditingController();
+  int _rating = 0;
+  bool _showRatingError = false;
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 0, 20, bottomInset + 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Rate ${widget.restaurantName}',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) {
+              final value = index + 1;
+              return IconButton(
+                tooltip: '$value star${value == 1 ? '' : 's'}',
+                onPressed: () {
+                  setState(() {
+                    _rating = value;
+                    _showRatingError = false;
+                  });
+                },
+                icon: Icon(
+                  value <= _rating ? Icons.star : Icons.star_border,
+                  size: 36,
+                  color: theme.colorScheme.primary,
+                ),
+              );
+            }),
+          ),
+          if (_showRatingError)
+            Center(
+              child: Text(
+                'Select a rating',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _commentController,
+            minLines: 3,
+            maxLines: 5,
+            textInputAction: TextInputAction.newline,
+            decoration: const InputDecoration(
+              labelText: 'Review',
+              hintText: 'Share your experience',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _submit,
+                  child: const Text('Submit'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _submit() {
+    if (_rating == 0) {
+      setState(() => _showRatingError = true);
+      return;
+    }
+
+    Navigator.pop(
+      context,
+      _ReviewSubmission(rating: _rating, comment: _commentController.text),
+    );
+  }
+}
+
+class _StarRating extends StatelessWidget {
+  final int value;
+
+  const _StarRating({required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(
+        5,
+        (index) => Icon(
+          index < value ? Icons.star : Icons.star_border,
+          size: 18,
+          color: Theme.of(context).colorScheme.primary,
         ),
       ),
     );
@@ -261,8 +497,18 @@ bool _isActiveDelivery(String status) {
 
 String _formatDate(DateTime dateTime) {
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   final local = dateTime.toLocal();
   return '${months[local.month - 1]} ${local.day}, ${local.year}';

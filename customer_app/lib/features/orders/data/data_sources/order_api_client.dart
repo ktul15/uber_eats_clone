@@ -43,4 +43,22 @@ class OrderApiClient {
       (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>,
     );
   }
+
+  Future<OrderDto> submitReview({
+    required String orderId,
+    required int rating,
+    String? comment,
+  }) async {
+    final response = await _dio.post(
+      '/api/orders/$orderId/review',
+      data: {
+        'rating': rating,
+        if (comment != null && comment.trim().isNotEmpty)
+          'comment': comment.trim(),
+      },
+    );
+    return OrderDto.fromJson(
+      (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>,
+    );
+  }
 }

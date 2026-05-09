@@ -282,9 +282,293 @@ as String?,
 
 
 /// @nodoc
+mixin _$OrderReviewDto {
+
+ String get id; String get orderId; String get customerId; String get restaurantId; int get rating; String? get comment; DateTime get createdAt; DateTime get updatedAt;
+/// Create a copy of OrderReviewDto
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$OrderReviewDtoCopyWith<OrderReviewDto> get copyWith => _$OrderReviewDtoCopyWithImpl<OrderReviewDto>(this as OrderReviewDto, _$identity);
+
+  /// Serializes this OrderReviewDto to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OrderReviewDto&&(identical(other.id, id) || other.id == id)&&(identical(other.orderId, orderId) || other.orderId == orderId)&&(identical(other.customerId, customerId) || other.customerId == customerId)&&(identical(other.restaurantId, restaurantId) || other.restaurantId == restaurantId)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.comment, comment) || other.comment == comment)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,id,orderId,customerId,restaurantId,rating,comment,createdAt,updatedAt);
+
+@override
+String toString() {
+  return 'OrderReviewDto(id: $id, orderId: $orderId, customerId: $customerId, restaurantId: $restaurantId, rating: $rating, comment: $comment, createdAt: $createdAt, updatedAt: $updatedAt)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $OrderReviewDtoCopyWith<$Res>  {
+  factory $OrderReviewDtoCopyWith(OrderReviewDto value, $Res Function(OrderReviewDto) _then) = _$OrderReviewDtoCopyWithImpl;
+@useResult
+$Res call({
+ String id, String orderId, String customerId, String restaurantId, int rating, String? comment, DateTime createdAt, DateTime updatedAt
+});
+
+
+
+
+}
+/// @nodoc
+class _$OrderReviewDtoCopyWithImpl<$Res>
+    implements $OrderReviewDtoCopyWith<$Res> {
+  _$OrderReviewDtoCopyWithImpl(this._self, this._then);
+
+  final OrderReviewDto _self;
+  final $Res Function(OrderReviewDto) _then;
+
+/// Create a copy of OrderReviewDto
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? orderId = null,Object? customerId = null,Object? restaurantId = null,Object? rating = null,Object? comment = freezed,Object? createdAt = null,Object? updatedAt = null,}) {
+  return _then(_self.copyWith(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,orderId: null == orderId ? _self.orderId : orderId // ignore: cast_nullable_to_non_nullable
+as String,customerId: null == customerId ? _self.customerId : customerId // ignore: cast_nullable_to_non_nullable
+as String,restaurantId: null == restaurantId ? _self.restaurantId : restaurantId // ignore: cast_nullable_to_non_nullable
+as String,rating: null == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
+as int,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
+as String?,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [OrderReviewDto].
+extension OrderReviewDtoPatterns on OrderReviewDto {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _OrderReviewDto value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _OrderReviewDto() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _OrderReviewDto value)  $default,){
+final _that = this;
+switch (_that) {
+case _OrderReviewDto():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _OrderReviewDto value)?  $default,){
+final _that = this;
+switch (_that) {
+case _OrderReviewDto() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String orderId,  String customerId,  String restaurantId,  int rating,  String? comment,  DateTime createdAt,  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _OrderReviewDto() when $default != null:
+return $default(_that.id,_that.orderId,_that.customerId,_that.restaurantId,_that.rating,_that.comment,_that.createdAt,_that.updatedAt);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String orderId,  String customerId,  String restaurantId,  int rating,  String? comment,  DateTime createdAt,  DateTime updatedAt)  $default,) {final _that = this;
+switch (_that) {
+case _OrderReviewDto():
+return $default(_that.id,_that.orderId,_that.customerId,_that.restaurantId,_that.rating,_that.comment,_that.createdAt,_that.updatedAt);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String orderId,  String customerId,  String restaurantId,  int rating,  String? comment,  DateTime createdAt,  DateTime updatedAt)?  $default,) {final _that = this;
+switch (_that) {
+case _OrderReviewDto() when $default != null:
+return $default(_that.id,_that.orderId,_that.customerId,_that.restaurantId,_that.rating,_that.comment,_that.createdAt,_that.updatedAt);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _OrderReviewDto implements OrderReviewDto {
+  const _OrderReviewDto({required this.id, required this.orderId, required this.customerId, required this.restaurantId, required this.rating, this.comment, required this.createdAt, required this.updatedAt});
+  factory _OrderReviewDto.fromJson(Map<String, dynamic> json) => _$OrderReviewDtoFromJson(json);
+
+@override final  String id;
+@override final  String orderId;
+@override final  String customerId;
+@override final  String restaurantId;
+@override final  int rating;
+@override final  String? comment;
+@override final  DateTime createdAt;
+@override final  DateTime updatedAt;
+
+/// Create a copy of OrderReviewDto
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$OrderReviewDtoCopyWith<_OrderReviewDto> get copyWith => __$OrderReviewDtoCopyWithImpl<_OrderReviewDto>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$OrderReviewDtoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OrderReviewDto&&(identical(other.id, id) || other.id == id)&&(identical(other.orderId, orderId) || other.orderId == orderId)&&(identical(other.customerId, customerId) || other.customerId == customerId)&&(identical(other.restaurantId, restaurantId) || other.restaurantId == restaurantId)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.comment, comment) || other.comment == comment)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,id,orderId,customerId,restaurantId,rating,comment,createdAt,updatedAt);
+
+@override
+String toString() {
+  return 'OrderReviewDto(id: $id, orderId: $orderId, customerId: $customerId, restaurantId: $restaurantId, rating: $rating, comment: $comment, createdAt: $createdAt, updatedAt: $updatedAt)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$OrderReviewDtoCopyWith<$Res> implements $OrderReviewDtoCopyWith<$Res> {
+  factory _$OrderReviewDtoCopyWith(_OrderReviewDto value, $Res Function(_OrderReviewDto) _then) = __$OrderReviewDtoCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, String orderId, String customerId, String restaurantId, int rating, String? comment, DateTime createdAt, DateTime updatedAt
+});
+
+
+
+
+}
+/// @nodoc
+class __$OrderReviewDtoCopyWithImpl<$Res>
+    implements _$OrderReviewDtoCopyWith<$Res> {
+  __$OrderReviewDtoCopyWithImpl(this._self, this._then);
+
+  final _OrderReviewDto _self;
+  final $Res Function(_OrderReviewDto) _then;
+
+/// Create a copy of OrderReviewDto
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? orderId = null,Object? customerId = null,Object? restaurantId = null,Object? rating = null,Object? comment = freezed,Object? createdAt = null,Object? updatedAt = null,}) {
+  return _then(_OrderReviewDto(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,orderId: null == orderId ? _self.orderId : orderId // ignore: cast_nullable_to_non_nullable
+as String,customerId: null == customerId ? _self.customerId : customerId // ignore: cast_nullable_to_non_nullable
+as String,restaurantId: null == restaurantId ? _self.restaurantId : restaurantId // ignore: cast_nullable_to_non_nullable
+as String,rating: null == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
+as int,comment: freezed == comment ? _self.comment : comment // ignore: cast_nullable_to_non_nullable
+as String?,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
 mixin _$OrderDto {
 
- String get id; String get customerId; String get restaurantId; String get status;@JsonKey(fromJson: _doubleFromJson) double get totalAmount; String get deliveryAddress; DateTime get createdAt; List<OrderItemDto> get orderItems; OrderRestaurantDto get restaurant;
+ String get id; String get customerId; String get restaurantId; String get status;@JsonKey(fromJson: _doubleFromJson) double get totalAmount; String get deliveryAddress; DateTime get createdAt; List<OrderItemDto> get orderItems; OrderRestaurantDto get restaurant; OrderReviewDto? get review;
 /// Create a copy of OrderDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -297,16 +581,16 @@ $OrderDtoCopyWith<OrderDto> get copyWith => _$OrderDtoCopyWithImpl<OrderDto>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is OrderDto&&(identical(other.id, id) || other.id == id)&&(identical(other.customerId, customerId) || other.customerId == customerId)&&(identical(other.restaurantId, restaurantId) || other.restaurantId == restaurantId)&&(identical(other.status, status) || other.status == status)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.deliveryAddress, deliveryAddress) || other.deliveryAddress == deliveryAddress)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&const DeepCollectionEquality().equals(other.orderItems, orderItems)&&(identical(other.restaurant, restaurant) || other.restaurant == restaurant));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OrderDto&&(identical(other.id, id) || other.id == id)&&(identical(other.customerId, customerId) || other.customerId == customerId)&&(identical(other.restaurantId, restaurantId) || other.restaurantId == restaurantId)&&(identical(other.status, status) || other.status == status)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.deliveryAddress, deliveryAddress) || other.deliveryAddress == deliveryAddress)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&const DeepCollectionEquality().equals(other.orderItems, orderItems)&&(identical(other.restaurant, restaurant) || other.restaurant == restaurant)&&(identical(other.review, review) || other.review == review));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,customerId,restaurantId,status,totalAmount,deliveryAddress,createdAt,const DeepCollectionEquality().hash(orderItems),restaurant);
+int get hashCode => Object.hash(runtimeType,id,customerId,restaurantId,status,totalAmount,deliveryAddress,createdAt,const DeepCollectionEquality().hash(orderItems),restaurant,review);
 
 @override
 String toString() {
-  return 'OrderDto(id: $id, customerId: $customerId, restaurantId: $restaurantId, status: $status, totalAmount: $totalAmount, deliveryAddress: $deliveryAddress, createdAt: $createdAt, orderItems: $orderItems, restaurant: $restaurant)';
+  return 'OrderDto(id: $id, customerId: $customerId, restaurantId: $restaurantId, status: $status, totalAmount: $totalAmount, deliveryAddress: $deliveryAddress, createdAt: $createdAt, orderItems: $orderItems, restaurant: $restaurant, review: $review)';
 }
 
 
@@ -317,11 +601,11 @@ abstract mixin class $OrderDtoCopyWith<$Res>  {
   factory $OrderDtoCopyWith(OrderDto value, $Res Function(OrderDto) _then) = _$OrderDtoCopyWithImpl;
 @useResult
 $Res call({
- String id, String customerId, String restaurantId, String status,@JsonKey(fromJson: _doubleFromJson) double totalAmount, String deliveryAddress, DateTime createdAt, List<OrderItemDto> orderItems, OrderRestaurantDto restaurant
+ String id, String customerId, String restaurantId, String status,@JsonKey(fromJson: _doubleFromJson) double totalAmount, String deliveryAddress, DateTime createdAt, List<OrderItemDto> orderItems, OrderRestaurantDto restaurant, OrderReviewDto? review
 });
 
 
-$OrderRestaurantDtoCopyWith<$Res> get restaurant;
+$OrderRestaurantDtoCopyWith<$Res> get restaurant;$OrderReviewDtoCopyWith<$Res>? get review;
 
 }
 /// @nodoc
@@ -334,7 +618,7 @@ class _$OrderDtoCopyWithImpl<$Res>
 
 /// Create a copy of OrderDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? customerId = null,Object? restaurantId = null,Object? status = null,Object? totalAmount = null,Object? deliveryAddress = null,Object? createdAt = null,Object? orderItems = null,Object? restaurant = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? customerId = null,Object? restaurantId = null,Object? status = null,Object? totalAmount = null,Object? deliveryAddress = null,Object? createdAt = null,Object? orderItems = null,Object? restaurant = null,Object? review = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,customerId: null == customerId ? _self.customerId : customerId // ignore: cast_nullable_to_non_nullable
@@ -345,7 +629,8 @@ as double,deliveryAddress: null == deliveryAddress ? _self.deliveryAddress : del
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,orderItems: null == orderItems ? _self.orderItems : orderItems // ignore: cast_nullable_to_non_nullable
 as List<OrderItemDto>,restaurant: null == restaurant ? _self.restaurant : restaurant // ignore: cast_nullable_to_non_nullable
-as OrderRestaurantDto,
+as OrderRestaurantDto,review: freezed == review ? _self.review : review // ignore: cast_nullable_to_non_nullable
+as OrderReviewDto?,
   ));
 }
 /// Create a copy of OrderDto
@@ -356,6 +641,18 @@ $OrderRestaurantDtoCopyWith<$Res> get restaurant {
   
   return $OrderRestaurantDtoCopyWith<$Res>(_self.restaurant, (value) {
     return _then(_self.copyWith(restaurant: value));
+  });
+}/// Create a copy of OrderDto
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$OrderReviewDtoCopyWith<$Res>? get review {
+    if (_self.review == null) {
+    return null;
+  }
+
+  return $OrderReviewDtoCopyWith<$Res>(_self.review!, (value) {
+    return _then(_self.copyWith(review: value));
   });
 }
 }
@@ -439,10 +736,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String customerId,  String restaurantId,  String status, @JsonKey(fromJson: _doubleFromJson)  double totalAmount,  String deliveryAddress,  DateTime createdAt,  List<OrderItemDto> orderItems,  OrderRestaurantDto restaurant)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String customerId,  String restaurantId,  String status, @JsonKey(fromJson: _doubleFromJson)  double totalAmount,  String deliveryAddress,  DateTime createdAt,  List<OrderItemDto> orderItems,  OrderRestaurantDto restaurant,  OrderReviewDto? review)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OrderDto() when $default != null:
-return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.totalAmount,_that.deliveryAddress,_that.createdAt,_that.orderItems,_that.restaurant);case _:
+return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.totalAmount,_that.deliveryAddress,_that.createdAt,_that.orderItems,_that.restaurant,_that.review);case _:
   return orElse();
 
 }
@@ -460,10 +757,10 @@ return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String customerId,  String restaurantId,  String status, @JsonKey(fromJson: _doubleFromJson)  double totalAmount,  String deliveryAddress,  DateTime createdAt,  List<OrderItemDto> orderItems,  OrderRestaurantDto restaurant)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String customerId,  String restaurantId,  String status, @JsonKey(fromJson: _doubleFromJson)  double totalAmount,  String deliveryAddress,  DateTime createdAt,  List<OrderItemDto> orderItems,  OrderRestaurantDto restaurant,  OrderReviewDto? review)  $default,) {final _that = this;
 switch (_that) {
 case _OrderDto():
-return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.totalAmount,_that.deliveryAddress,_that.createdAt,_that.orderItems,_that.restaurant);case _:
+return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.totalAmount,_that.deliveryAddress,_that.createdAt,_that.orderItems,_that.restaurant,_that.review);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -480,10 +777,10 @@ return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String customerId,  String restaurantId,  String status, @JsonKey(fromJson: _doubleFromJson)  double totalAmount,  String deliveryAddress,  DateTime createdAt,  List<OrderItemDto> orderItems,  OrderRestaurantDto restaurant)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String customerId,  String restaurantId,  String status, @JsonKey(fromJson: _doubleFromJson)  double totalAmount,  String deliveryAddress,  DateTime createdAt,  List<OrderItemDto> orderItems,  OrderRestaurantDto restaurant,  OrderReviewDto? review)?  $default,) {final _that = this;
 switch (_that) {
 case _OrderDto() when $default != null:
-return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.totalAmount,_that.deliveryAddress,_that.createdAt,_that.orderItems,_that.restaurant);case _:
+return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.totalAmount,_that.deliveryAddress,_that.createdAt,_that.orderItems,_that.restaurant,_that.review);case _:
   return null;
 
 }
@@ -495,7 +792,7 @@ return $default(_that.id,_that.customerId,_that.restaurantId,_that.status,_that.
 @JsonSerializable()
 
 class _OrderDto implements OrderDto {
-  const _OrderDto({required this.id, required this.customerId, required this.restaurantId, required this.status, @JsonKey(fromJson: _doubleFromJson) required this.totalAmount, required this.deliveryAddress, required this.createdAt, required final  List<OrderItemDto> orderItems, required this.restaurant}): _orderItems = orderItems;
+  const _OrderDto({required this.id, required this.customerId, required this.restaurantId, required this.status, @JsonKey(fromJson: _doubleFromJson) required this.totalAmount, required this.deliveryAddress, required this.createdAt, required final  List<OrderItemDto> orderItems, required this.restaurant, this.review}): _orderItems = orderItems;
   factory _OrderDto.fromJson(Map<String, dynamic> json) => _$OrderDtoFromJson(json);
 
 @override final  String id;
@@ -513,6 +810,7 @@ class _OrderDto implements OrderDto {
 }
 
 @override final  OrderRestaurantDto restaurant;
+@override final  OrderReviewDto? review;
 
 /// Create a copy of OrderDto
 /// with the given fields replaced by the non-null parameter values.
@@ -527,16 +825,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OrderDto&&(identical(other.id, id) || other.id == id)&&(identical(other.customerId, customerId) || other.customerId == customerId)&&(identical(other.restaurantId, restaurantId) || other.restaurantId == restaurantId)&&(identical(other.status, status) || other.status == status)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.deliveryAddress, deliveryAddress) || other.deliveryAddress == deliveryAddress)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&const DeepCollectionEquality().equals(other._orderItems, _orderItems)&&(identical(other.restaurant, restaurant) || other.restaurant == restaurant));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OrderDto&&(identical(other.id, id) || other.id == id)&&(identical(other.customerId, customerId) || other.customerId == customerId)&&(identical(other.restaurantId, restaurantId) || other.restaurantId == restaurantId)&&(identical(other.status, status) || other.status == status)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.deliveryAddress, deliveryAddress) || other.deliveryAddress == deliveryAddress)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&const DeepCollectionEquality().equals(other._orderItems, _orderItems)&&(identical(other.restaurant, restaurant) || other.restaurant == restaurant)&&(identical(other.review, review) || other.review == review));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,customerId,restaurantId,status,totalAmount,deliveryAddress,createdAt,const DeepCollectionEquality().hash(_orderItems),restaurant);
+int get hashCode => Object.hash(runtimeType,id,customerId,restaurantId,status,totalAmount,deliveryAddress,createdAt,const DeepCollectionEquality().hash(_orderItems),restaurant,review);
 
 @override
 String toString() {
-  return 'OrderDto(id: $id, customerId: $customerId, restaurantId: $restaurantId, status: $status, totalAmount: $totalAmount, deliveryAddress: $deliveryAddress, createdAt: $createdAt, orderItems: $orderItems, restaurant: $restaurant)';
+  return 'OrderDto(id: $id, customerId: $customerId, restaurantId: $restaurantId, status: $status, totalAmount: $totalAmount, deliveryAddress: $deliveryAddress, createdAt: $createdAt, orderItems: $orderItems, restaurant: $restaurant, review: $review)';
 }
 
 
@@ -547,11 +845,11 @@ abstract mixin class _$OrderDtoCopyWith<$Res> implements $OrderDtoCopyWith<$Res>
   factory _$OrderDtoCopyWith(_OrderDto value, $Res Function(_OrderDto) _then) = __$OrderDtoCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String customerId, String restaurantId, String status,@JsonKey(fromJson: _doubleFromJson) double totalAmount, String deliveryAddress, DateTime createdAt, List<OrderItemDto> orderItems, OrderRestaurantDto restaurant
+ String id, String customerId, String restaurantId, String status,@JsonKey(fromJson: _doubleFromJson) double totalAmount, String deliveryAddress, DateTime createdAt, List<OrderItemDto> orderItems, OrderRestaurantDto restaurant, OrderReviewDto? review
 });
 
 
-@override $OrderRestaurantDtoCopyWith<$Res> get restaurant;
+@override $OrderRestaurantDtoCopyWith<$Res> get restaurant;@override $OrderReviewDtoCopyWith<$Res>? get review;
 
 }
 /// @nodoc
@@ -564,7 +862,7 @@ class __$OrderDtoCopyWithImpl<$Res>
 
 /// Create a copy of OrderDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? customerId = null,Object? restaurantId = null,Object? status = null,Object? totalAmount = null,Object? deliveryAddress = null,Object? createdAt = null,Object? orderItems = null,Object? restaurant = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? customerId = null,Object? restaurantId = null,Object? status = null,Object? totalAmount = null,Object? deliveryAddress = null,Object? createdAt = null,Object? orderItems = null,Object? restaurant = null,Object? review = freezed,}) {
   return _then(_OrderDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,customerId: null == customerId ? _self.customerId : customerId // ignore: cast_nullable_to_non_nullable
@@ -575,7 +873,8 @@ as double,deliveryAddress: null == deliveryAddress ? _self.deliveryAddress : del
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,orderItems: null == orderItems ? _self._orderItems : orderItems // ignore: cast_nullable_to_non_nullable
 as List<OrderItemDto>,restaurant: null == restaurant ? _self.restaurant : restaurant // ignore: cast_nullable_to_non_nullable
-as OrderRestaurantDto,
+as OrderRestaurantDto,review: freezed == review ? _self.review : review // ignore: cast_nullable_to_non_nullable
+as OrderReviewDto?,
   ));
 }
 
@@ -587,6 +886,18 @@ $OrderRestaurantDtoCopyWith<$Res> get restaurant {
   
   return $OrderRestaurantDtoCopyWith<$Res>(_self.restaurant, (value) {
     return _then(_self.copyWith(restaurant: value));
+  });
+}/// Create a copy of OrderDto
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$OrderReviewDtoCopyWith<$Res>? get review {
+    if (_self.review == null) {
+    return null;
+  }
+
+  return $OrderReviewDtoCopyWith<$Res>(_self.review!, (value) {
+    return _then(_self.copyWith(review: value));
   });
 }
 }

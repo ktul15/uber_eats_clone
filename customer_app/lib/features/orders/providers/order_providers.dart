@@ -63,3 +63,29 @@ Future<List<OrderDto>> orderHistory(Ref ref) async {
   final client = ref.watch(orderApiClientProvider);
   return client.getOrders();
 }
+
+// --- Submit Review ---
+
+@riverpod
+class SubmitReview extends _$SubmitReview {
+  @override
+  FutureOr<OrderDto?> build() => null;
+
+  Future<void> execute({
+    required String orderId,
+    required int rating,
+    String? comment,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final client = ref.read(orderApiClientProvider);
+      final order = await client.submitReview(
+        orderId: orderId,
+        rating: rating,
+        comment: comment,
+      );
+      ref.invalidate(orderHistoryProvider);
+      return order;
+    });
+  }
+}

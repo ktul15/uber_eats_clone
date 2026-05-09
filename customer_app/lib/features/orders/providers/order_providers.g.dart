@@ -177,3 +177,47 @@ final class OrderHistoryProvider
 }
 
 String _$orderHistoryHash() => r'4fe8951082d84d13b02ca01a8050cbcfb7d2e5dd';
+
+@ProviderFor(SubmitReview)
+final submitReviewProvider = SubmitReviewProvider._();
+
+final class SubmitReviewProvider
+    extends $AsyncNotifierProvider<SubmitReview, OrderDto?> {
+  SubmitReviewProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'submitReviewProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$submitReviewHash();
+
+  @$internal
+  @override
+  SubmitReview create() => SubmitReview();
+}
+
+String _$submitReviewHash() => r'7e25d9e31cc58144317ed0d247e5a54a60d4693d';
+
+abstract class _$SubmitReview extends $AsyncNotifier<OrderDto?> {
+  FutureOr<OrderDto?> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<OrderDto?>, OrderDto?>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<OrderDto?>, OrderDto?>,
+              AsyncValue<OrderDto?>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
