@@ -69,10 +69,9 @@ Future<List<OrderDto>> orderHistory(Ref ref) async {
 @riverpod
 class SubmitReview extends _$SubmitReview {
   @override
-  FutureOr<OrderDto?> build() => null;
+  FutureOr<OrderDto?> build(String orderId) => null;
 
-  Future<void> execute({
-    required String orderId,
+  Future<AsyncValue<OrderDto?>> execute({
     required int rating,
     String? comment,
   }) async {
@@ -82,10 +81,11 @@ class SubmitReview extends _$SubmitReview {
       final order = await client.submitReview(
         orderId: orderId,
         rating: rating,
-        comment: comment,
+        comment: comment?.trim(),
       );
       ref.invalidate(orderHistoryProvider);
       return order;
     });
+    return state;
   }
 }

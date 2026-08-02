@@ -5,7 +5,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { AuthRequest } from '../types/auth.types';
 import { getIO } from '../socket/index';
 import { rooms } from '../socket/rooms';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, Prisma } from '@prisma/client';
 import { haversineKm } from '../utils/haversine';
 import { sendPushNotification, sendPushNotificationToMany } from '../utils/fcm';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -236,16 +236,31 @@ export const createOrderReview = asyncHandler(async (req: AuthRequest, res: Resp
     if (!userId) throw AppError.unauthorized('Not authenticated');
 
     const orderId = req.params['id'] as string;
-    const { rating, comment } = req.body as { rating?: number; comment?: string };
-    const numericRating = Number(rating);
-
-    if (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
+    const { rating, comment } = req.body as { rating?: unknown; comment?: unknown };
+    if (typeof rating !== 'number' || !Number.isInteger(rating) || rating < 1 || rating > 5) {
         throw AppError.badRequest('rating must be an integer between 1 and 5');
+    }
+    if (comment !== undefined && typeof comment !== 'string') {
+        throw AppError.badRequest('comment must be a string');
+    }
+    if (typeof comment === 'string' && comment.length > 1000) {
+        throw AppError.badRequest('comment must be at most 1000 characters');
     }
 
     const customerId = await getCustomerProfileId(userId);
 
     const updatedOrder = await prisma.$transaction(async (tx) => {
+        const orderIdentity = await tx.order.findUnique({
+            where: { id: orderId },
+            select: { restaurantId: true },
+        });
+
+        if (!orderIdentity) throw AppError.notFound('Order not found');
+
+        // Serialize review creation and aggregate updates per restaurant. This
+        // prevents concurrent reviews from persisting a stale average.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${orderIdentity.restaurantId}))`;
+
         const order = await tx.order.findUnique({
             where: { id: orderId },
             include: { review: true },
@@ -261,7 +276,7 @@ export const createOrderReview = asyncHandler(async (req: AuthRequest, res: Resp
                 orderId: order.id,
                 customerId,
                 restaurantId: order.restaurantId,
-                rating: numericRating,
+                rating,
                 comment: comment?.trim() || null,
             },
         });
@@ -272,6 +287,11 @@ export const createOrderReview = asyncHandler(async (req: AuthRequest, res: Resp
             where: { id: order.id },
             include: orderInclude,
         });
+    }).catch((error: unknown) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+            throw AppError.conflict('Order has already been reviewed');
+        }
+        throw error;
     });
 
     res.status(201).json({ success: true, data: updatedOrder });

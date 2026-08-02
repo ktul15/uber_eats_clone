@@ -179,33 +179,78 @@ final class OrderHistoryProvider
 String _$orderHistoryHash() => r'4fe8951082d84d13b02ca01a8050cbcfb7d2e5dd';
 
 @ProviderFor(SubmitReview)
-final submitReviewProvider = SubmitReviewProvider._();
+final submitReviewProvider = SubmitReviewFamily._();
 
 final class SubmitReviewProvider
     extends $AsyncNotifierProvider<SubmitReview, OrderDto?> {
-  SubmitReviewProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'submitReviewProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+  SubmitReviewProvider._({
+    required SubmitReviewFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'submitReviewProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$submitReviewHash();
 
+  @override
+  String toString() {
+    return r'submitReviewProvider'
+        ''
+        '($argument)';
+  }
+
   @$internal
   @override
   SubmitReview create() => SubmitReview();
+
+  @override
+  bool operator ==(Object other) {
+    return other is SubmitReviewProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
 }
 
-String _$submitReviewHash() => r'7e25d9e31cc58144317ed0d247e5a54a60d4693d';
+String _$submitReviewHash() => r'4c2916fad8f70f75df1bd0fb6377bd6b81f6d230';
+
+final class SubmitReviewFamily extends $Family
+    with
+        $ClassFamilyOverride<
+          SubmitReview,
+          AsyncValue<OrderDto?>,
+          OrderDto?,
+          FutureOr<OrderDto?>,
+          String
+        > {
+  SubmitReviewFamily._()
+    : super(
+        retry: null,
+        name: r'submitReviewProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  SubmitReviewProvider call(String orderId) =>
+      SubmitReviewProvider._(argument: orderId, from: this);
+
+  @override
+  String toString() => r'submitReviewProvider';
+}
 
 abstract class _$SubmitReview extends $AsyncNotifier<OrderDto?> {
-  FutureOr<OrderDto?> build();
+  late final _$args = ref.$arg as String;
+  String get orderId => _$args;
+
+  FutureOr<OrderDto?> build(String orderId);
   @$mustCallSuper
   @override
   void runBuild() {
@@ -218,6 +263,6 @@ abstract class _$SubmitReview extends $AsyncNotifier<OrderDto?> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    element.handleCreate(ref, () => build(_$args));
   }
 }

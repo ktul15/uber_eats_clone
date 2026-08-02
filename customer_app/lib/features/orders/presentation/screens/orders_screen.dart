@@ -98,6 +98,7 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
     final date = _formatDate(order.createdAt);
     final itemCount = order.orderItems.length;
     final isDelivered = order.status.toUpperCase() == 'DELIVERED';
+    final reviewSubmission = ref.watch(submitReviewProvider(order.id));
 
     return Semantics(
       button: hasItems,
@@ -106,7 +107,9 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
           '\$${order.totalAmount.toStringAsFixed(2)}, '
           '$itemCount item${itemCount == 1 ? '' : 's'}. '
           '${hasItems ? 'Tap to ${_expanded ? 'collapse' : 'expand'} order items.' : ''}',
-      excludeSemantics: true,
+      // Preserve the independent Track Order and Rate Order button actions for
+      // assistive technology while still providing a concise card summary.
+      excludeSemantics: false,
       child: Card(
         elevation: 0,
         clipBehavior: Clip.hardEdge,
@@ -202,8 +205,11 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
                   const SizedBox(height: 12),
                   _ReviewSection(
                     order: order,
+                    isSubmitting: reviewSubmission.isLoading,
                     onReview: order.review == null
-                        ? () => _handleReview(context, order)
+                        ? reviewSubmission.isLoading
+                              ? null
+                              : () => _handleReview(context, order)
                         : null,
                   ),
                 ],
@@ -230,23 +236,16 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
 
     if (submission == null || !context.mounted) return;
 
-    await ref
-        .read(submitReviewProvider.notifier)
-        .execute(
-          orderId: order.id,
-          rating: submission.rating,
-          comment: submission.comment,
-        );
+    final result = await ref
+        .read(submitReviewProvider(order.id).notifier)
+        .execute(rating: submission.rating, comment: submission.comment);
 
     if (!context.mounted) return;
-    final submitState = ref.read(submitReviewProvider);
     final messenger = ScaffoldMessenger.of(context);
 
-    if (submitState.hasError) {
+    if (result.hasError) {
       messenger.showSnackBar(
-        SnackBar(
-          content: Text('Failed to submit review: ${submitState.error}'),
-        ),
+        SnackBar(content: Text('Failed to submit review: ${result.error}')),
       );
       return;
     }
@@ -258,8 +257,13 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
 class _ReviewSection extends StatelessWidget {
   final OrderDto order;
   final VoidCallback? onReview;
+  final bool isSubmitting;
 
-  const _ReviewSection({required this.order, required this.onReview});
+  const _ReviewSection({
+    required this.order,
+    required this.onReview,
+    required this.isSubmitting,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -302,8 +306,13 @@ class _ReviewSection extends StatelessWidget {
       width: double.infinity,
       child: OutlinedButton.icon(
         onPressed: onReview,
-        icon: const Icon(Icons.star_outline),
-        label: const Text('Rate Order'),
+        icon: isSubmitting
+            ? const SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.star_outline),
+        label: Text(isSubmitting ? 'Submitting…' : 'Rate Order'),
       ),
     );
   }
@@ -326,6 +335,7 @@ class _ReviewSheet extends StatefulWidget {
 }
 
 class _ReviewSheetState extends State<_ReviewSheet> {
+  static const _commentMaxLength = 1000;
   final _commentController = TextEditingController();
   int _rating = 0;
   bool _showRatingError = false;
@@ -388,6 +398,7 @@ class _ReviewSheetState extends State<_ReviewSheet> {
             controller: _commentController,
             minLines: 3,
             maxLines: 5,
+            maxLength: _commentMaxLength,
             textInputAction: TextInputAction.newline,
             decoration: const InputDecoration(
               labelText: 'Review',

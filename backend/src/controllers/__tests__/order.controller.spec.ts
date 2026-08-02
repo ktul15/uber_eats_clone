@@ -1,6 +1,7 @@
 import { createOrderReview, getOrderById } from '../order.controller';
 import { prisma } from '../../utils/prisma';
 import { AppError } from '../../utils/AppError';
+import { Prisma } from '@prisma/client';
 
 jest.mock('stripe', () => {
     return jest.fn().mockImplementation(() => ({
@@ -120,8 +121,10 @@ describe('Order Controller', () => {
 
             const updatedOrder = { id: 'order-1', review: { id: 'review-1', rating: 5 } };
             const tx = {
+                $executeRaw: jest.fn(),
                 order: {
                     findUnique: jest.fn()
+                        .mockResolvedValueOnce({ restaurantId: 'restaurant-1' })
                         .mockResolvedValueOnce({
                             id: 'order-1',
                             customerId: 'customer-1',
@@ -143,6 +146,7 @@ describe('Order Controller', () => {
             await flushPromises();
 
             expect(next).not.toHaveBeenCalled();
+            expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
             expect(tx.review.create).toHaveBeenCalledWith({
                 data: {
                     orderId: 'order-1',
@@ -170,17 +174,40 @@ describe('Order Controller', () => {
             expect(prismaMock.$transaction).not.toHaveBeenCalled();
         });
 
+        it('rejects non-string comments without starting a transaction', async () => {
+            req.body = { rating: 5, comment: { text: 'invalid' } };
+
+            createOrderReview(req, res, next);
+            await flushPromises();
+
+            expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 400 }));
+            expect(prismaMock.$transaction).not.toHaveBeenCalled();
+        });
+
+        it('rejects comments longer than 1000 characters', async () => {
+            req.body = { rating: 5, comment: 'a'.repeat(1001) };
+
+            createOrderReview(req, res, next);
+            await flushPromises();
+
+            expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 400 }));
+            expect(prismaMock.$transaction).not.toHaveBeenCalled();
+        });
+
         it('rejects orders owned by another customer', async () => {
             prismaMock.customerProfile.findUnique.mockResolvedValueOnce({ id: 'customer-1' } as any);
             const tx = {
+                $executeRaw: jest.fn(),
                 order: {
-                    findUnique: jest.fn().mockResolvedValueOnce({
-                        id: 'order-1',
-                        customerId: 'customer-2',
-                        restaurantId: 'restaurant-1',
-                        status: 'DELIVERED',
-                        review: null,
-                    }),
+                    findUnique: jest.fn()
+                        .mockResolvedValueOnce({ restaurantId: 'restaurant-1' })
+                        .mockResolvedValueOnce({
+                            id: 'order-1',
+                            customerId: 'customer-2',
+                            restaurantId: 'restaurant-1',
+                            status: 'DELIVERED',
+                            review: null,
+                        }),
                 },
             };
             prismaMock.$transaction.mockImplementationOnce((callback: any) => callback(tx));
@@ -194,14 +221,17 @@ describe('Order Controller', () => {
         it('rejects non-delivered orders', async () => {
             prismaMock.customerProfile.findUnique.mockResolvedValueOnce({ id: 'customer-1' } as any);
             const tx = {
+                $executeRaw: jest.fn(),
                 order: {
-                    findUnique: jest.fn().mockResolvedValueOnce({
-                        id: 'order-1',
-                        customerId: 'customer-1',
-                        restaurantId: 'restaurant-1',
-                        status: 'PREPARING',
-                        review: null,
-                    }),
+                    findUnique: jest.fn()
+                        .mockResolvedValueOnce({ restaurantId: 'restaurant-1' })
+                        .mockResolvedValueOnce({
+                            id: 'order-1',
+                            customerId: 'customer-1',
+                            restaurantId: 'restaurant-1',
+                            status: 'PREPARING',
+                            review: null,
+                        }),
                 },
             };
             prismaMock.$transaction.mockImplementationOnce((callback: any) => callback(tx));
@@ -215,14 +245,17 @@ describe('Order Controller', () => {
         it('rejects duplicate reviews', async () => {
             prismaMock.customerProfile.findUnique.mockResolvedValueOnce({ id: 'customer-1' } as any);
             const tx = {
+                $executeRaw: jest.fn(),
                 order: {
-                    findUnique: jest.fn().mockResolvedValueOnce({
-                        id: 'order-1',
-                        customerId: 'customer-1',
-                        restaurantId: 'restaurant-1',
-                        status: 'DELIVERED',
-                        review: { id: 'review-1' },
-                    }),
+                    findUnique: jest.fn()
+                        .mockResolvedValueOnce({ restaurantId: 'restaurant-1' })
+                        .mockResolvedValueOnce({
+                            id: 'order-1',
+                            customerId: 'customer-1',
+                            restaurantId: 'restaurant-1',
+                            status: 'DELIVERED',
+                            review: { id: 'review-1' },
+                        }),
                 },
             };
             prismaMock.$transaction.mockImplementationOnce((callback: any) => callback(tx));
@@ -231,6 +264,24 @@ describe('Order Controller', () => {
             await flushPromises();
 
             expect(next).toHaveBeenCalledWith(expect.any(AppError));
+        });
+
+        it('maps a concurrent duplicate review to conflict', async () => {
+            prismaMock.customerProfile.findUnique.mockResolvedValueOnce({ id: 'customer-1' } as any);
+            prismaMock.$transaction.mockRejectedValueOnce(
+                new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+                    code: 'P2002',
+                    clientVersion: '7.4.2',
+                }),
+            );
+
+            createOrderReview(req, res, next);
+            await flushPromises();
+
+            expect(next).toHaveBeenCalledWith(expect.objectContaining({
+                statusCode: 409,
+                message: 'Order has already been reviewed',
+            }));
         });
     });
 });

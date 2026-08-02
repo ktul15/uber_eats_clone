@@ -8,6 +8,7 @@ import {
     updateOrderStatus,
     createOrderReview,
 } from '../controllers/order.controller';
+import { validateCreateOrderReview } from '../validators/order.validator';
 
 const router = Router();
 
@@ -24,7 +25,7 @@ router.post('/', requireRole(['CUSTOMER']), placeOrder);
 router.get('/', requireRole(['CUSTOMER', 'OWNER']), getOrders);
 
 // POST /api/orders/:id/review  — Customer only
-router.post('/:id/review', requireRole(['CUSTOMER']), createOrderReview);
+router.post('/:id/review', requireRole(['CUSTOMER']), validateCreateOrderReview, createOrderReview);
 
 // GET /api/orders/:id
 router.get('/:id', getOrderById);
