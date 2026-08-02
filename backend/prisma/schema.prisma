@@ -46,7 +46,7 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  fcmToken        String?
+  fcmToken String?
 
   customerProfile CustomerProfile?
   driverProfile   DriverProfile?
@@ -61,9 +61,10 @@ model CustomerProfile {
   defaultAddress   String?
   stripeCustomerId String? @unique
 
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orders Order[]
-  cart   Cart?
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders  Order[]
+  cart    Cart?
+  reviews Review[]
 }
 
 model DriverProfile {
@@ -108,6 +109,7 @@ model Restaurant {
   menuItems MenuItem[]
   orders    Order[]
   carts     Cart[]
+  reviews   Review[]
 }
 
 model MenuItem {
@@ -142,6 +144,7 @@ model Order {
   restaurant Restaurant      @relation(fields: [restaurantId], references: [id])
   orderItems OrderItem[]
   delivery   Delivery?
+  review     Review?
 }
 
 model OrderItem {
@@ -192,4 +195,22 @@ model Delivery {
 
   order  Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   driver DriverProfile @relation(fields: [driverId], references: [id])
+}
+
+model Review {
+  id           String   @id @default(uuid())
+  orderId      String   @unique
+  customerId   String
+  restaurantId String
+  rating       Int
+  comment      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  order      Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customer   CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  restaurant Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([restaurantId])
 }
