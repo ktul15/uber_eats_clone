@@ -5,8 +5,11 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { AuthRequest } from '../types/auth.types';
 import { getIO } from '../socket/index';
 import { rooms } from '../socket/rooms';
-import { DeliveryStatus } from '@prisma/client';
+import { DeliveryStatus, Prisma } from '@prisma/client';
 import { sendPushNotification } from '../utils/fcm';
+import { haversineKm } from '../utils/haversine';
+
+const MAX_ASSIGNMENT_DISTANCE_KM = 10;
 
 const NEXT_STATUS: Partial<Record<DeliveryStatus, DeliveryStatus>> = {
     ASSIGNED: 'AT_RESTAURANT',
@@ -20,6 +23,68 @@ const getDriverProfileId = async (userId: string): Promise<string> => {
     return profile.id;
 };
 
+const validCoordinates = (lat: unknown, lng: unknown): lat is number =>
+    typeof lat === 'number' &&
+    typeof lng === 'number' &&
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -90 && lat <= 90 &&
+    lng >= -180 && lng <= 180;
+
+// PATCH /api/deliveries/availability
+export const updateAvailability = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+    const userId = req.user?.id;
+    if (!userId) throw AppError.unauthorized('Not authenticated');
+
+    const { isAvailable, lat, lng } = req.body as {
+        isAvailable?: unknown;
+        lat?: unknown;
+        lng?: unknown;
+    };
+    if (typeof isAvailable !== 'boolean') {
+        throw AppError.badRequest('isAvailable must be a boolean');
+    }
+    if ((lat === undefined) !== (lng === undefined)) {
+        throw AppError.badRequest('lat and lng must be provided together');
+    }
+    if (isAvailable && (lat === undefined || lng === undefined)) {
+        throw AppError.badRequest('Fresh lat and lng are required to go online');
+    }
+    if (lat !== undefined && !validCoordinates(lat, lng)) {
+        throw AppError.badRequest('lat and lng must be valid coordinates');
+    }
+
+    const profileId = await getDriverProfileId(userId);
+    const updated = await prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${profileId}))`;
+        const profile = await tx.driverProfile.findUnique({ where: { id: profileId } });
+        if (!profile) throw AppError.notFound('Driver profile not found');
+
+        const activeDelivery = await tx.delivery.findFirst({
+            where: { driverId: profile.id, status: { not: DeliveryStatus.COMPLETED } },
+            select: { id: true },
+        });
+        if (activeDelivery) {
+            throw AppError.conflict(
+                isAvailable
+                    ? 'Complete the active delivery before going online'
+                    : 'You cannot go offline during an active delivery',
+            );
+        }
+
+        return tx.driverProfile.update({
+            where: { id: profile.id },
+            data: {
+                isAvailable,
+                ...(lat !== undefined && { currentLat: lat as number, currentLng: lng as number }),
+            },
+            select: { isAvailable: true, currentLat: true, currentLng: true },
+        });
+    });
+
+    res.status(200).json({ success: true, data: updated });
+});
+
 // POST /api/deliveries/accept
 export const acceptDelivery = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
     const userId = req.user?.id;
@@ -31,12 +96,47 @@ export const acceptDelivery = asyncHandler(async (req: AuthRequest, res: Respons
     const driverProfileId = await getDriverProfileId(userId);
 
     const delivery = await prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${driverProfileId}))`;
+        const driver = await tx.driverProfile.findUnique({ where: { id: driverProfileId } });
+        if (!driver || !driver.isAvailable) {
+            throw AppError.conflict('Driver is offline or already handling a delivery');
+        }
+
         const fresh = await tx.order.findUnique({
             where: { id: orderId },
-            select: { status: true },
+            select: { status: true, restaurant: { select: { lat: true, lng: true } } },
         });
         if (!fresh) throw AppError.notFound('Order not found');
         if (fresh.status !== 'READY') throw AppError.conflict('Order is no longer available');
+        if (!validCoordinates(driver.currentLat, driver.currentLng) ||
+            !validCoordinates(fresh.restaurant.lat, fresh.restaurant.lng)) {
+            throw AppError.conflict('Valid driver and restaurant coordinates are required');
+        }
+        const driverLat = driver.currentLat as number;
+        const driverLng = driver.currentLng as number;
+        const restaurantLat = fresh.restaurant.lat as number;
+        const restaurantLng = fresh.restaurant.lng as number;
+        if (haversineKm(
+            driverLat,
+            driverLng,
+            restaurantLat,
+            restaurantLng,
+        ) > MAX_ASSIGNMENT_DISTANCE_KM) {
+            throw AppError.forbidden('Order is outside the delivery radius');
+        }
+
+        const claimed = await tx.driverProfile.updateMany({
+            where: {
+                id: driverProfileId,
+                isAvailable: true,
+                currentLat: { not: null },
+                currentLng: { not: null },
+            },
+            data: { isAvailable: false },
+        });
+        if (claimed.count !== 1) {
+            throw AppError.conflict('Driver is offline or already handling a delivery');
+        }
 
         const created = await tx.delivery.create({
             data: { orderId, driverId: driverProfileId, status: 'ASSIGNED' },
@@ -51,12 +151,12 @@ export const acceptDelivery = asyncHandler(async (req: AuthRequest, res: Respons
             },
         });
 
-        await tx.driverProfile.update({
-            where: { id: driverProfileId },
-            data: { isAvailable: false },
-        });
-
         return created;
+    }).catch((error: unknown) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+            throw AppError.conflict('Order is no longer available');
+        }
+        throw error;
     });
 
     const io = getIO();
@@ -117,9 +217,16 @@ export const updateDeliveryStatus = asyncHandler(async (req: AuthRequest, res: R
             throw AppError.badRequest(`Cannot transition from ${existing.status} to ${status}`);
         }
 
-        const updated = await tx.delivery.update({
-            where: { id: deliveryId },
+        const claimed = await tx.delivery.updateMany({
+            where: { id: deliveryId, driverId: driverProfileId, status: existing.status },
             data: { status: status as DeliveryStatus },
+        });
+        if (claimed.count !== 1) {
+            throw AppError.conflict('Delivery status changed; refresh and try again');
+        }
+
+        const updated = await tx.delivery.findUniqueOrThrow({
+            where: { id: deliveryId },
             include: {
                 order: {
                     include: {
@@ -166,6 +273,45 @@ export const updateDeliveryStatus = asyncHandler(async (req: AuthRequest, res: R
     res.status(200).json({ success: true, data: delivery });
 });
 
+// GET /api/deliveries/order/:orderId — customer-authorized tracking snapshot
+export const getDeliveryForOrder = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+    const userId = req.user?.id;
+    if (!userId) throw AppError.unauthorized('Not authenticated');
+
+    const orderId = req.params['orderId'] as string;
+    const customer = await prisma.customerProfile.findUnique({ where: { userId }, select: { id: true } });
+    if (!customer) throw AppError.notFound('Customer profile not found');
+
+    const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: {
+            customerId: true,
+            deliveryAddress: true,
+            delivery: {
+                include: {
+                    driver: { select: { name: true, vehicleType: true, currentLat: true, currentLng: true } },
+                },
+            },
+        },
+    });
+    if (!order) throw AppError.notFound('Order not found');
+    if (order.customerId !== customer.id) throw AppError.forbidden('You cannot track this order');
+
+    res.status(200).json({
+        success: true,
+        data: order.delivery == null ? null : {
+            deliveryId: order.delivery.id,
+            orderId,
+            status: order.delivery.status,
+            driverName: order.delivery.driver.name,
+            driverVehicleType: order.delivery.driver.vehicleType,
+            driverLat: order.delivery.driver.currentLat,
+            driverLng: order.delivery.driver.currentLng,
+            deliveryAddress: order.deliveryAddress,
+        },
+    });
+});
+
 // PATCH /api/deliveries/:id/location
 export const updateLocation = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
     const userId = req.user?.id;
@@ -174,8 +320,8 @@ export const updateLocation = asyncHandler(async (req: AuthRequest, res: Respons
     const deliveryId = req.params['id'] as string;
     const { lat, lng } = req.body as { lat?: unknown; lng?: unknown };
 
-    if (typeof lat !== 'number' || typeof lng !== 'number' || !isFinite(lat) || !isFinite(lng)) {
-        throw AppError.badRequest('lat and lng must be finite numbers');
+    if (!validCoordinates(lat, lng)) {
+        throw AppError.badRequest('lat and lng must be valid coordinates');
     }
 
     const delivery = await prisma.$transaction(async (tx) => {
@@ -193,7 +339,7 @@ export const updateLocation = asyncHandler(async (req: AuthRequest, res: Respons
 
         await tx.driverProfile.update({
             where: { id: profile.id },
-            data: { currentLat: lat, currentLng: lng },
+            data: { currentLat: lat as number, currentLng: lng as number },
         });
 
         return existing;

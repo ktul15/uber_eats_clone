@@ -51,10 +51,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         );
   }
 
-  void _onLogout() {
-    ref.read(authRepositoryProvider).logout();
-    ref.invalidate(isAuthenticatedProvider);
-    context.goNamed(AppRoutes.loginName);
+  Future<void> _onLogout() async {
+    await ref.read(logoutProvider.notifier).execute();
+    if (mounted) context.goNamed(AppRoutes.loginName);
   }
 
   @override

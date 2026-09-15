@@ -5,12 +5,14 @@ import 'package:driver_app/app/routes.dart';
 import 'package:driver_app/features/deliveries/domain/models/active_delivery.dart';
 import 'package:driver_app/features/deliveries/providers/delivery_providers.dart';
 import 'package:driver_app/features/deliveries/providers/location_providers.dart';
+import 'package:driver_app/features/deliveries/providers/availability_provider.dart';
 
 class ActiveDeliveryScreen extends ConsumerStatefulWidget {
   const ActiveDeliveryScreen({super.key});
 
   @override
-  ConsumerState<ActiveDeliveryScreen> createState() => _ActiveDeliveryScreenState();
+  ConsumerState<ActiveDeliveryScreen> createState() =>
+      _ActiveDeliveryScreenState();
 }
 
 class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
@@ -19,7 +21,9 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final delivery = await ref.read(activeDeliveryProvider.future);
-      if (delivery != null && delivery.status != DeliveryStatus.completed && mounted) {
+      if (delivery != null &&
+          delivery.status != DeliveryStatus.completed &&
+          mounted) {
         ref.read(locationTrackerProvider.notifier).start(delivery.id);
       }
     });
@@ -41,6 +45,7 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
         final isGone = next.value == null;
         if (isGone && wasActive) {
           ref.read(locationTrackerProvider.notifier).stop();
+          ref.invalidate(driverAvailabilityProvider);
           context.goNamed(AppRoutes.homeName);
         }
       }
@@ -83,25 +88,25 @@ class _DeliveryBody extends ConsumerWidget {
   const _DeliveryBody({required this.delivery});
 
   String get _headerTitle => switch (delivery.status) {
-        DeliveryStatus.assigned => 'Head to Restaurant',
-        DeliveryStatus.atRestaurant => 'Collect the Order',
-        DeliveryStatus.inTransit => 'En Route to Customer',
-        DeliveryStatus.completed => 'Delivered',
-      };
+    DeliveryStatus.assigned => 'Head to Restaurant',
+    DeliveryStatus.atRestaurant => 'Collect the Order',
+    DeliveryStatus.inTransit => 'En Route to Customer',
+    DeliveryStatus.completed => 'Delivered',
+  };
 
   IconData get _headerIcon => switch (delivery.status) {
-        DeliveryStatus.assigned => Icons.directions_car,
-        DeliveryStatus.atRestaurant => Icons.restaurant,
-        DeliveryStatus.inTransit => Icons.delivery_dining,
-        DeliveryStatus.completed => Icons.check_circle,
-      };
+    DeliveryStatus.assigned => Icons.directions_car,
+    DeliveryStatus.atRestaurant => Icons.restaurant,
+    DeliveryStatus.inTransit => Icons.delivery_dining,
+    DeliveryStatus.completed => Icons.check_circle,
+  };
 
   String get _actionLabel => switch (delivery.status) {
-        DeliveryStatus.assigned => "I've Arrived at Restaurant",
-        DeliveryStatus.atRestaurant => 'Confirm Pickup',
-        DeliveryStatus.inTransit => 'Confirm Delivery',
-        DeliveryStatus.completed => 'Done',
-      };
+    DeliveryStatus.assigned => "I've Arrived at Restaurant",
+    DeliveryStatus.atRestaurant => 'Confirm Pickup',
+    DeliveryStatus.inTransit => 'Confirm Delivery',
+    DeliveryStatus.completed => 'Done',
+  };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -134,7 +139,10 @@ class _DeliveryBody extends ConsumerWidget {
             const SizedBox(height: 12),
             _InfoRow(icon: Icons.storefront, value: delivery.restaurantName),
             const SizedBox(height: 8),
-            _InfoRow(icon: Icons.location_on, value: delivery.restaurantAddress),
+            _InfoRow(
+              icon: Icons.location_on,
+              value: delivery.restaurantAddress,
+            ),
           ],
           if (delivery.status == DeliveryStatus.atRestaurant) ...[
             _SectionLabel('Order Items', theme),
@@ -198,7 +206,11 @@ class _PhaseHeader extends StatelessWidget {
   final String title;
   final ThemeData theme;
 
-  const _PhaseHeader({required this.icon, required this.title, required this.theme});
+  const _PhaseHeader({
+    required this.icon,
+    required this.title,
+    required this.theme,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -208,7 +220,9 @@ class _PhaseHeader extends StatelessWidget {
         const SizedBox(width: 12),
         Text(
           title,
-          style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
@@ -222,11 +236,11 @@ class _StatusChip extends StatelessWidget {
   const _StatusChip({required this.status, required this.theme});
 
   String get _label => switch (status) {
-        DeliveryStatus.assigned => 'ASSIGNED',
-        DeliveryStatus.atRestaurant => 'AT RESTAURANT',
-        DeliveryStatus.inTransit => 'IN TRANSIT',
-        DeliveryStatus.completed => 'COMPLETED',
-      };
+    DeliveryStatus.assigned => 'ASSIGNED',
+    DeliveryStatus.atRestaurant => 'AT RESTAURANT',
+    DeliveryStatus.inTransit => 'IN TRANSIT',
+    DeliveryStatus.completed => 'COMPLETED',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -269,9 +283,7 @@ class _InfoRow extends StatelessWidget {
       children: [
         Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
         const SizedBox(width: 12),
-        Expanded(
-          child: Text(value, style: theme.textTheme.bodyLarge),
-        ),
+        Expanded(child: Text(value, style: theme.textTheme.bodyLarge)),
       ],
     );
   }

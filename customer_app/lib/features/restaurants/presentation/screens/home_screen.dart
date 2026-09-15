@@ -43,7 +43,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _onSearchChanged() {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      ref.read(searchQueryProvider.notifier).update(_searchController.text.trim());
+      ref
+          .read(searchQueryProvider.notifier)
+          .update(_searchController.text.trim());
     });
   }
 
@@ -96,8 +98,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.4),
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.4,
+                ),
               ),
             ),
           ),
@@ -155,7 +158,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (_, index) => RestaurantCard(
                       restaurant: restaurants[index],
-                      onTap: () => _navigateToDetail(context, restaurants[index]),
+                      onTap: () =>
+                          _navigateToDetail(context, restaurants[index]),
                     ),
                   ),
                 );

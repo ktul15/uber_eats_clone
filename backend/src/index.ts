@@ -40,7 +40,9 @@ app.use('/api/deliveries', deliveryRoutes);
 app.use('/api/restaurants/:restaurantId/menu', menuRoutes);
 
 // Serve static uploaded files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
+  setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
+}));
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ success: true, data: { status: 'ok', message: 'Uber Eats Clone API is healthy' } });

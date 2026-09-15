@@ -57,8 +57,9 @@ class DeliveryStatusStepper extends StatelessWidget {
                   child: Text(
                     label,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight:
-                          isCurrent ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isCurrent
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                       color: (isPending || currentStep == -1)
                           ? theme.colorScheme.onSurfaceVariant
                           : theme.colorScheme.onSurface,
@@ -74,12 +75,12 @@ class DeliveryStatusStepper extends StatelessWidget {
   }
 
   int _statusToStep(String status) => switch (status.toUpperCase()) {
-        'ASSIGNED' => 0,
-        'AT_RESTAURANT' => 1,
-        'IN_TRANSIT' => 2,
-        'COMPLETED' => 3,
-        _ => -1,
-      };
+    'ASSIGNED' => 0,
+    'AT_RESTAURANT' => 1,
+    'IN_TRANSIT' => 2,
+    'COMPLETED' => 3,
+    _ => -1,
+  };
 }
 
 class _StepIcon extends StatelessWidget {

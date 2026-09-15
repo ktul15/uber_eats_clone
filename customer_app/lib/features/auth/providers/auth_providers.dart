@@ -7,12 +7,23 @@ import 'package:customer_app/features/auth/domain/models/user.dart';
 import 'package:customer_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:customer_app/shared/providers/dio_provider.dart';
 import 'package:customer_app/shared/providers/fcm_provider.dart';
+import 'package:customer_app/features/orders/providers/order_providers.dart';
 
 part 'auth_providers.g.dart';
 
 Future<void> _registerFcmToken(Ref ref) async {
   final token = await FirebaseMessaging.instance.getToken();
   if (token != null) await ref.read(fcmApiClientProvider).registerToken(token);
+}
+
+Future<void> bestEffortFcmUnregister({
+  required Future<String?> Function() getToken,
+  required Future<void> Function(String token) removeToken,
+}) async {
+  try {
+    final token = await getToken();
+    if (token != null) await removeToken(token);
+  } catch (_) {}
 }
 
 // --- Infrastructure Providers ---
@@ -88,5 +99,27 @@ class Register extends _$Register {
       ref.invalidate(isAuthenticatedProvider);
       unawaited(_registerFcmToken(ref));
     }
+  }
+}
+
+@riverpod
+class Logout extends _$Logout {
+  @override
+  FutureOr<void> build() => null;
+
+  Future<void> execute() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      try {
+        await bestEffortFcmUnregister(
+          getToken: FirebaseMessaging.instance.getToken,
+          removeToken: ref.read(fcmApiClientProvider).removeToken,
+        );
+      } finally {
+        await ref.read(checkoutSessionStorageProvider).clearActive();
+        await ref.read(authRepositoryProvider).logout();
+        ref.invalidate(isAuthenticatedProvider);
+      }
+    });
   }
 }

@@ -107,7 +107,7 @@ final class ActiveDeliveryNotifierProvider
 }
 
 String _$activeDeliveryNotifierHash() =>
-    r'0cd909a2f2f5552f4d7788c47a0b24ddd1b68cef';
+    r'dcbda42376378418419fe573e9edc68c031e7716';
 
 final class ActiveDeliveryNotifierFamily extends $Family
     with

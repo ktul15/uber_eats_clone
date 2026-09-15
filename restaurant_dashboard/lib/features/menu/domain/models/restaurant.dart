@@ -8,6 +8,8 @@ class Restaurant extends Equatable {
   final bool isActive;
   final String? description;
   final String? address;
+  final double? lat;
+  final double? lng;
   final String? imageUrl;
   final List<MenuItem> menuItems;
 
@@ -18,6 +20,8 @@ class Restaurant extends Equatable {
     required this.isActive,
     this.description,
     this.address,
+    this.lat,
+    this.lng,
     this.imageUrl,
     this.menuItems = const [],
   });
@@ -29,6 +33,8 @@ class Restaurant extends Equatable {
     bool? isActive,
     String? description,
     String? address,
+    double? lat,
+    double? lng,
     String? imageUrl,
     List<MenuItem>? menuItems,
   }) {
@@ -39,6 +45,8 @@ class Restaurant extends Equatable {
       isActive: isActive ?? this.isActive,
       description: description ?? this.description,
       address: address ?? this.address,
+      lat: lat ?? this.lat,
+      lng: lng ?? this.lng,
       imageUrl: imageUrl ?? this.imageUrl,
       menuItems: menuItems ?? this.menuItems,
     );
@@ -52,6 +60,8 @@ class Restaurant extends Equatable {
     isActive,
     description,
     address,
+    lat,
+    lng,
     imageUrl,
     menuItems,
   ];

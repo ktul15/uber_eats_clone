@@ -52,16 +52,16 @@ class LocationTracker extends _$LocationTracker {
       );
     }
 
-    _subscription = Geolocator.getPositionStream(locationSettings: settings).listen(
-      (position) {
-        ref.read(deliveryApiClientProvider).updateLocation(
-              deliveryId,
-              position.latitude,
-              position.longitude,
-            );
-      },
-      onError: (_) {},
-    );
+    _subscription = Geolocator.getPositionStream(locationSettings: settings)
+        .listen((position) {
+          ref
+              .read(deliveryApiClientProvider)
+              .updateLocation(
+                deliveryId,
+                position.latitude,
+                position.longitude,
+              );
+        }, onError: (_) {});
   }
 
   void stop() {

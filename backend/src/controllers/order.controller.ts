@@ -8,6 +8,7 @@ import { rooms } from '../socket/rooms';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { haversineKm } from '../utils/haversine';
 import { sendPushNotification, sendPushNotificationToMany } from '../utils/fcm';
+import { createHash } from 'crypto';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const Stripe = require('stripe');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', { apiVersion: '2025-03-31.basil' });
@@ -23,6 +24,41 @@ const orderInclude = {
     orderItems: { include: { menuItem: true } },
     restaurant: true,
     review: true,
+};
+
+const ORDER_TRANSITIONS: Partial<Record<OrderStatus, readonly OrderStatus[]>> = {
+    PENDING: [OrderStatus.ACCEPTED, OrderStatus.CANCELLED],
+    ACCEPTED: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
+    PREPARING: [OrderStatus.READY, OrderStatus.CANCELLED],
+};
+
+type CartForCheckout = {
+    id: string;
+    restaurantId: string;
+    items: Array<{
+        menuItemId: string;
+        quantity: number;
+        menuItem: { price: unknown };
+    }>;
+};
+
+const cartTotalCents = (cart: CartForCheckout): number => cart.items.reduce(
+    (sum, item) => sum + Math.round(Number(item.menuItem.price) * 100) * item.quantity,
+    0,
+);
+
+const cartFingerprint = (cart: CartForCheckout): string => {
+    const canonicalItems = cart.items
+        .map((item) => ({
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            unitPriceCents: Math.round(Number(item.menuItem.price) * 100),
+        }))
+        .sort((left, right) => left.menuItemId.localeCompare(right.menuItemId));
+
+    return createHash('sha256')
+        .update(JSON.stringify({ restaurantId: cart.restaurantId, items: canonicalItems }))
+        .digest('hex');
 };
 
 const updateRestaurantRating = async (
@@ -42,7 +78,7 @@ const updateRestaurantRating = async (
 
 // POST /api/orders/payment-intent
 // Creates a Stripe PaymentIntent for the current cart total.
-// Returns: { clientSecret }
+// Returns: { clientSecret, paymentIntentId }
 export const createPaymentIntent = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
     const userId = req.user?.id;
     if (!userId) throw AppError.unauthorized('Not authenticated');
@@ -59,24 +95,29 @@ export const createPaymentIntent = asyncHandler(async (req: AuthRequest, res: Re
         throw AppError.badRequest('Cart is empty');
     }
 
-    // Calculate total in cents
-    const totalCents = cart.items.reduce((sum, item) => {
-        return sum + Math.round(Number(item.menuItem.price) * item.quantity * 100);
-    }, 0);
+    const totalCents = cartTotalCents(cart);
+    const fingerprint = cartFingerprint(cart);
 
     const paymentIntent = await stripe.paymentIntents.create({
         amount: totalCents,
         currency: 'usd',
+        payment_method_types: ['card'],
         metadata: {
             customerId,
             cartId: cart.id,
             restaurantId: cart.restaurantId,
+            cartFingerprint: fingerprint,
+            amountCents: totalCents.toString(),
+            currency: 'usd',
         },
     });
 
     res.status(200).json({
         success: true,
-        data: { clientSecret: paymentIntent.client_secret },
+        data: {
+            clientSecret: paymentIntent.client_secret,
+            paymentIntentId: paymentIntent.id,
+        },
     });
 });
 
@@ -95,13 +136,30 @@ export const placeOrder = asyncHandler(async (req: AuthRequest, res: Response): 
         throw AppError.badRequest('paymentIntentId is required');
     }
 
-    // Verify payment succeeded with Stripe
+    const customerId = await getCustomerProfileId(userId);
+
+    const existingOrder = await prisma.order.findUnique({
+        where: { paymentIntentId },
+        include: {
+            orderItems: { include: { menuItem: true } },
+            restaurant: { include: { owner: { select: { fcmToken: true } } } },
+        },
+    });
+    if (existingOrder) {
+        if (existingOrder.customerId !== customerId) {
+            throw AppError.conflict('Payment has already been used');
+        }
+        if (existingOrder.deliveryAddress.trim() !== deliveryAddress.trim()) {
+            throw AppError.conflict('Payment was already used with a different delivery address');
+        }
+        res.status(200).json({ success: true, data: existingOrder });
+        return;
+    }
+
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     if (paymentIntent.status !== 'succeeded') {
         throw AppError.badRequest('Payment has not been completed');
     }
-
-    const customerId = await getCustomerProfileId(userId);
 
     // Load cart
     const cart = await prisma.cart.findUnique({
@@ -113,16 +171,31 @@ export const placeOrder = asyncHandler(async (req: AuthRequest, res: Response): 
         throw AppError.badRequest('Cart is empty');
     }
 
-    // Calculate total
-    const totalAmount = cart.items.reduce((sum, item) => {
-        return sum + Number(item.menuItem.price) * item.quantity;
-    }, 0);
+    const totalCents = cartTotalCents(cart);
+    const fingerprint = cartFingerprint(cart);
+    const metadata = paymentIntent.metadata ?? {};
+    if (
+        paymentIntent.amount !== totalCents ||
+        paymentIntent.currency !== 'usd' ||
+        metadata.customerId !== customerId ||
+        metadata.cartId !== cart.id ||
+        metadata.restaurantId !== cart.restaurantId ||
+        metadata.cartFingerprint !== fingerprint ||
+        metadata.amountCents !== totalCents.toString() ||
+        metadata.currency !== 'usd'
+    ) {
+        throw AppError.badRequest('Payment does not match the current cart');
+    }
+
+    const totalAmount = totalCents / 100;
+    let created = true;
 
     // Create order + items + clear cart atomically
     const order = await prisma.$transaction(async (tx) => {
         const newOrder = await tx.order.create({
             data: {
                 customerId,
+                paymentIntentId,
                 restaurantId: cart.restaurantId,
                 deliveryAddress: deliveryAddress.trim(),
                 totalAmount,
@@ -149,9 +222,28 @@ export const placeOrder = asyncHandler(async (req: AuthRequest, res: Response): 
                 restaurant: { include: { owner: { select: { fcmToken: true } } } },
             },
         });
+    }).catch(async (error: unknown) => {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+            const duplicate = await prisma.order.findUnique({
+                where: { paymentIntentId },
+                include: {
+                    orderItems: { include: { menuItem: true } },
+                    restaurant: { include: { owner: { select: { fcmToken: true } } } },
+                },
+            });
+            if (duplicate?.customerId === customerId) {
+                if (duplicate.deliveryAddress.trim() !== deliveryAddress.trim()) {
+                    throw AppError.conflict('Payment was already used with a different delivery address');
+                }
+                created = false;
+                return duplicate;
+            }
+            throw AppError.conflict('Payment has already been used');
+        }
+        throw error;
     });
 
-    if (order) {
+    if (order && created) {
         getIO().to(rooms.restaurant(order.restaurantId)).emit('order:new', {
             orderId: order.id,
             restaurantId: order.restaurantId,
@@ -168,7 +260,7 @@ export const placeOrder = asyncHandler(async (req: AuthRequest, res: Response): 
         }
     }
 
-    res.status(201).json({ success: true, data: order });
+    res.status(created ? 201 : 200).json({ success: true, data: order });
 });
 
 // GET /api/orders
@@ -312,6 +404,7 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
     const order = await prisma.order.findUnique({
         where: { id: orderId },
         select: {
+            status: true,
             restaurant: { select: { ownerId: true, name: true, lat: true, lng: true } },
             customer: { select: { userId: true, user: { select: { fcmToken: true } } } },
         },
@@ -320,9 +413,21 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
     if (!order) throw AppError.notFound('Order not found');
     if (order.restaurant.ownerId !== userId) throw AppError.forbidden('You do not own this restaurant');
 
-    const updated = await prisma.order.update({
+    const nextStatus = status as OrderStatus;
+    if (!ORDER_TRANSITIONS[order.status]?.includes(nextStatus)) {
+        throw AppError.conflict(`Cannot transition order from ${order.status} to ${nextStatus}`);
+    }
+
+    const claimed = await prisma.order.updateMany({
+        where: { id: orderId, status: order.status, restaurant: { ownerId: userId } },
+        data: { status: nextStatus },
+    });
+    if (claimed.count !== 1) {
+        throw AppError.conflict('Order status changed; refresh and try again');
+    }
+
+    const updated = await prisma.order.findUniqueOrThrow({
         where: { id: orderId },
-        data: { status: status as OrderStatus },
         include: { orderItems: { include: { menuItem: true } }, restaurant: true },
     });
 
@@ -360,19 +465,20 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
         const nearbyDriverTokens: string[] = [];
         availableDrivers.forEach((driver) => {
             if (
-                order.restaurant.lat != null &&
-                order.restaurant.lng != null &&
-                driver.currentLat != null &&
-                driver.currentLng != null
-            ) {
-                const dist = haversineKm(
-                    driver.currentLat,
-                    driver.currentLng,
-                    order.restaurant.lat,
-                    order.restaurant.lng,
-                );
-                if (dist > 10) return;
-            }
+                order.restaurant.lat == null ||
+                order.restaurant.lng == null ||
+                driver.currentLat == null ||
+                driver.currentLng == null ||
+                !Number.isFinite(driver.currentLat) ||
+                !Number.isFinite(driver.currentLng)
+            ) return;
+            const dist = haversineKm(
+                driver.currentLat,
+                driver.currentLng,
+                order.restaurant.lat,
+                order.restaurant.lng,
+            );
+            if (dist > 10) return;
             io.to(rooms.driver(driver.userId)).emit('order:available', payload);
             if (driver.user.fcmToken) nearbyDriverTokens.push(driver.user.fcmToken);
         });

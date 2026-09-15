@@ -10,7 +10,7 @@ class RestaurantRepository {
   final RestaurantApiClient _apiClient;
 
   RestaurantRepository({required RestaurantApiClient apiClient})
-      : _apiClient = apiClient;
+    : _apiClient = apiClient;
 
   Future<List<Restaurant>> getRestaurants({String? search}) async {
     final dtos = await _apiClient.getRestaurants(search: search);

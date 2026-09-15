@@ -4,24 +4,19 @@ This is the Phase 8 QA runbook for the Uber Eats clone. Test each component inde
 
 This guide describes the intended acceptance behavior. A failed expectation is a defect, not a reason to edit the expected result to match the implementation. Record the branch and commit for every QA run so results remain reproducible.
 
-## 0. Known Baseline Blockers
+## 0. Issue #35 Scope Decisions and Regression Targets
 
-The following code/document mismatches were present when this guide was reviewed on 2026-09-07. Verify and close them during issue #35 before attempting release sign-off:
+Issue #35 closes the release blockers identified during the 2026-09-07 review. Keep these behaviors in the release regression suite:
 
-| Area | Current implementation | Required QA outcome |
-|---|---|---|
-| Account verification | Registration immediately issues a JWT; no OTP or email-verification flow exists despite the Phase 2 roadmap wording | Implement and test verification, or explicitly remove it from release scope |
-| Customer payment | Creates a PaymentIntent but does not collect or confirm a payment method; order placement therefore cannot complete through the normal UI against Stripe | Integrate Stripe client confirmation and test success, decline, cancellation, and retry |
-| Payment validation | Order placement checks only that the supplied PaymentIntent succeeded; it does not bind the intent's amount/customer/cart metadata to the order or prevent reuse | Validate ownership, amount, currency, metadata, and one-time/idempotent use |
-| Driver availability | New drivers default to unavailable, with no UI or API for going online; coordinates are only uploaded after accepting a delivery | Add an availability/location-before-assignment flow |
-| Driver proximity | The ready-order broadcast allows an available driver through when restaurant or driver coordinates are missing | Define the fallback explicitly; otherwise require valid coordinates before treating a driver as nearby |
-| Restaurant creation | The backend supports creation, but the dashboard empty state instructs the owner to use the API and has no creation UI | Add the intended owner creation flow or explicitly keep setup admin-only |
-| Socket rooms | Restaurant and driver clients emit a single room string while the server expects a list; the customer tracking client never joins its customer room; the server lets any owner request any `restaurant:*` room; and the dashboard joins only its first restaurant | Use one payload contract, join required rooms, verify ownership, support every owned restaurant, and add connection/event tests |
-| Restaurant notifications | The backend can send to an owner's FCM token, but the restaurant dashboard does not register an FCM token | Add registration or narrow the notification requirement |
-| Driver smoke test | The test mounts `App` without `ProviderScope` and asserts stale text | Fix the test and make `flutter test` pass |
-| CI | Workflow build/test commands are commented out, and workflow production triggers name `master` while the repository workflow requires `main` | Make CI run backend and all three Flutter checks on the correct branches |
+- Customer checkout confirms card payment through Stripe Payment Sheet. The backend binds the PaymentIntent to the authenticated customer, cart, restaurant, amount, currency, and cart contents, and safely handles retries without creating a second order.
+- Drivers can go online only after sharing a valid current location. Ready orders are offered only to available drivers with valid coordinates within the configured radius.
+- Owners can create their first restaurant in the dashboard.
+- Socket clients use the shared string-array join contract. Customer and driver rooms are identity-bound, restaurant rooms are ownership-checked, and owners join every owned restaurant room.
+- The restaurant dashboard registers its FCM token, the driver smoke test uses the required provider scope, and CI runs backend and Flutter checks for `dev` and `main`.
 
-Temporary database edits or API tooling may be used to prepare downstream QA data, but they do not count as a pass for the blocked user journey.
+OTP/email verification is explicitly outside the current release scope. Registration continues to issue a JWT immediately; the Phase 2 roadmap entry is historical context and must not be treated as implemented behavior.
+
+Temporary database edits or API tooling may prepare downstream QA data, but they do not count as a pass for any supported user journey above.
 
 ## 1. Prepare a Clean QA Environment
 
@@ -74,6 +69,20 @@ Confirm the review migrations are applied:
 
 - `20260509000000_add_order_reviews`
 - `20260802000000_harden_order_reviews`
+- `20260915000000_add_order_payment_intent`
+- `20260915010000_one_active_delivery_per_driver`
+
+Before applying `20260915010000_one_active_delivery_per_driver` to an existing environment, check for legacy duplicate active assignments:
+
+```sql
+SELECT "driverId", array_agg("id") AS "deliveryIds"
+FROM "Delivery"
+WHERE "status" <> 'COMPLETED'
+GROUP BY "driverId"
+HAVING COUNT(*) > 1;
+```
+
+The migration intentionally stops with an actionable error when this query returns rows. An operator must inspect each affected delivery and explicitly complete or reassign duplicates before retrying; the migration does not guess which live delivery to preserve.
 
 ### Flutter dependencies
 
@@ -108,12 +117,12 @@ npm run test:integration
 npx prisma validate
 ```
 
-Expected baseline after issue #34:
+Expected baseline after issue #35:
 
 - TypeScript build passes.
-- With `TEST_DATABASE_URL` configured and reachable, 104 total backend tests pass, including 5 PostgreSQL integration tests.
-- Without `TEST_DATABASE_URL`, a normal `npm test` run reports 99 passed and 5 skipped.
-- `npm run test:integration` passes all 5 integration tests and deliberately fails when `TEST_DATABASE_URL` is absent.
+- With `TEST_DATABASE_URL` configured and reachable, 138 total backend tests pass, including 8 PostgreSQL integration tests.
+- Without `TEST_DATABASE_URL`, a normal `npm test` run reports 130 passed and 8 skipped.
+- `npm run test:integration` passes all 8 integration tests and deliberately fails when `TEST_DATABASE_URL` is absent.
 
 `npm run test:integration` must fail when `TEST_DATABASE_URL` is absent so database coverage cannot be silently skipped.
 
@@ -125,7 +134,7 @@ flutter analyze
 flutter test
 ```
 
-Expected release baseline: 8 tests pass and analysis has no findings. The current `avoid_print` finding in the FCM client is a known Phase 8 cleanup item, not an accepted release result.
+Expected release baseline: 15 tests pass and analysis has no findings.
 
 ### Restaurant dashboard
 
@@ -135,7 +144,7 @@ flutter analyze
 flutter test
 ```
 
-Expected release baseline: analysis is clean and the smoke test passes. Add feature-level tests for the order and menu flows exercised during Phase 8.
+Expected release baseline: analysis is clean and 4 tests pass, including restaurant-creation validation coverage.
 
 ### Driver app
 
@@ -145,7 +154,7 @@ flutter analyze
 flutter test
 ```
 
-Expected release baseline: analysis is clean and all tests pass. The current driver smoke test lacks `ProviderScope` and expects stale text; treat it as a Phase 8 defect and fix it before declaring the repository green.
+Expected release baseline: analysis is clean and 6 tests pass, including availability permission-state and logout-cleanup coverage.
 
 ### Repository checks
 
@@ -169,7 +178,7 @@ Use separate accounts for authorization and data-isolation testing:
 | Driver A | `qa.driver.a@example.com` |
 | Driver B | `qa.driver.b@example.com` |
 
-Create (Restaurant creation currently requires an authenticated API request because the dashboard has no creation screen):
+Create through the supported app flows:
 
 - Restaurant A owned by Owner A.
 - Restaurant B owned by Owner B.
@@ -181,7 +190,7 @@ Create (Restaurant creation currently requires an authenticated API request beca
 
 Use recognizable names such as `QA Pizza Kitchen`, `QA Burger House`, and `Margherita QA` so cross-user or cross-restaurant mistakes are obvious.
 
-Until the driver availability blocker is fixed, a QA fixture may set `DriverProfile.isAvailable`, `currentLat`, and `currentLng` to exercise downstream assignment. Record that workaround in the test evidence; it does not validate the missing go-online journey.
+Use the driver app's online control to submit a fresh location. Fixture changes do not validate availability, permission, or proximity behavior.
 
 ## 4. Start the Complete System
 
@@ -275,7 +284,7 @@ Test empty state, valid creation, missing fields, invalid coordinates, editing, 
 
 Verify changes appear in the customer app after refresh and unauthorized access returns `403`.
 
-Also create two restaurants for one owner. Both must be visible and manageable, and both must receive their own real-time orders. The current dashboard renders and joins only the first restaurant, so this is a known blocker rather than an accepted single-restaurant constraint.
+Also create two restaurants for one owner. Both must be visible and manageable, and both must receive their own real-time orders.
 
 ### Menu management
 
@@ -323,7 +332,7 @@ Quantities must never be negative and one cart must never silently combine multi
 
 ## 8. Checkout and Stripe
 
-Use Stripe test mode only. After client-side Stripe confirmation is implemented, use this successful test card:
+Use Stripe test mode only. With Stripe Payment Sheet configured, use this successful test card:
 
 ```text
 4242 4242 4242 4242
@@ -333,7 +342,7 @@ Any three-digit CVC
 
 Test empty addresses, trimmed addresses, empty carts, valid payment, declined cards, authentication flows, network loss before and after PaymentIntent creation, double-tapping Place Order, cancelled Stripe flows, application restart, and cart changes while checkout is open.
 
-Current limitation: the customer app extracts the PaymentIntent ID without presenting or confirming Stripe's payment UI. In the present build, verify that an unconfirmed PaymentIntent is rejected and file/retain the blocker; do not report a successful UI checkout. A separately confirmed test PaymentIntent or controlled database fixture may be used only to continue testing downstream order, delivery, and review behavior.
+Verify Payment Sheet success, decline, cancellation, and retry behavior. An unconfirmed PaymentIntent must be rejected, and a confirmed intent must match the authenticated customer, cart contents, restaurant, amount, and currency before order creation.
 
 Verify:
 
@@ -347,7 +356,7 @@ Verify:
 
 ## 9. Complete Real-Time Happy Path
 
-Run this flow without manually altering the database after the payment and driver-availability blockers are fixed. Until then, clearly label any fixture-assisted run as a partial downstream regression, not a full happy-path pass:
+Run this flow without manually altering the database. Fixture-assisted runs are partial downstream regressions, not full happy-path passes:
 
 1. Customer A places an order at Restaurant A.
 2. Restaurant A receives it without refresh.
@@ -424,7 +433,7 @@ Watch battery use and location-update frequency.
 
 ## 12. Firebase Notifications
 
-Use real devices and valid Firebase configuration. Test new-order, accepted, preparing, ready, assigned, in-transit, delivered, and new-delivery notifications. Customer and driver token registration exists; owner/restaurant token registration is a known blocker and must be implemented before owner push cases can pass.
+Use real devices and valid Firebase configuration. Test new-order, accepted, preparing, ready, assigned, in-transit, delivered, and new-delivery notifications. Verify token registration and removal for customer, driver, and owner accounts.
 
 For every role, test foreground, background, terminated, permission-denied, refreshed tokens, stale tokens, logout/login as another user, and multiple devices where supported.
 

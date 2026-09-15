@@ -13,7 +13,15 @@ jest.mock('../../socket/index', () => ({
 }));
 
 // Import after mocks are established
-import { acceptDelivery, updateDeliveryStatus, getActiveDelivery, updateLocation, getDriverLocation } from '../delivery.controller';
+import {
+    acceptDelivery,
+    updateAvailability,
+    updateDeliveryStatus,
+    getActiveDelivery,
+    updateLocation,
+    getDriverLocation,
+    getDeliveryForOrder,
+} from '../delivery.controller';
 
 describe('Delivery Controller', () => {
     let req: any;
@@ -25,6 +33,58 @@ describe('Delivery Controller', () => {
             json: jest.fn(),
         };
         jest.clearAllMocks();
+    });
+
+    describe('updateAvailability', () => {
+        beforeEach(() => {
+            req = {
+                user: { id: 'user-1', role: 'DRIVER' },
+                body: { isAvailable: true, lat: 37.77, lng: -122.41 },
+            };
+        });
+
+        it('requires valid coordinates when going online', async () => {
+            req.body = { isAvailable: true, lat: 100, lng: -122.41 };
+            await expect(updateAvailability(req, res)).rejects.toMatchObject({ statusCode: 400 });
+            expect(prismaMock.driverProfile.update).not.toHaveBeenCalled();
+        });
+
+        it('requires fresh coordinates even when the profile has historical coordinates', async () => {
+            req.body = { isAvailable: true };
+
+            await expect(updateAvailability(req, res)).rejects.toMatchObject({ statusCode: 400 });
+            expect(prismaMock.$transaction).not.toHaveBeenCalled();
+        });
+
+        it('rejects going offline during an active delivery', async () => {
+            req.body = { isAvailable: false };
+            prismaMock.driverProfile.findUnique.mockResolvedValue({
+                id: 'dp-1', currentLat: 37.77, currentLng: -122.41,
+            } as any);
+            prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+            prismaMock.delivery.findFirst.mockResolvedValueOnce({ id: 'delivery-1' } as any);
+
+            await expect(updateAvailability(req, res)).rejects.toMatchObject({ statusCode: 409 });
+        });
+
+        it('persists availability and coordinates when no delivery is active', async () => {
+            prismaMock.driverProfile.findUnique.mockResolvedValue({
+                id: 'dp-1', currentLat: null, currentLng: null,
+            } as any);
+            prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+            prismaMock.delivery.findFirst.mockResolvedValueOnce(null);
+            prismaMock.driverProfile.update.mockResolvedValueOnce({
+                isAvailable: true, currentLat: 37.77, currentLng: -122.41,
+            } as any);
+
+            await updateAvailability(req, res);
+
+            expect(prismaMock.driverProfile.update).toHaveBeenCalledWith(expect.objectContaining({
+                where: { id: 'dp-1' },
+                data: { isAvailable: true, currentLat: 37.77, currentLng: -122.41 },
+            }));
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
     });
 
     // ─── acceptDelivery ───────────────────────────────────────────────────────
@@ -53,16 +113,26 @@ describe('Delivery Controller', () => {
         });
 
         it('throws 404 if order not found inside transaction', async () => {
-            prismaMock.driverProfile.findUnique.mockResolvedValueOnce({ id: 'dp-1' } as any);
+            prismaMock.driverProfile.findUnique
+                .mockResolvedValueOnce({ id: 'dp-1' } as any)
+                .mockResolvedValueOnce({
+                    id: 'dp-1', isAvailable: true, currentLat: 37.77, currentLng: -122.41,
+                } as any);
             prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+            prismaMock.driverProfile.updateMany.mockResolvedValueOnce({ count: 1 });
             prismaMock.order.findUnique.mockResolvedValueOnce(null);
 
             await expect(acceptDelivery(req, res)).rejects.toThrow(AppError);
         });
 
         it('throws 409 if order not in READY status', async () => {
-            prismaMock.driverProfile.findUnique.mockResolvedValueOnce({ id: 'dp-1' } as any);
+            prismaMock.driverProfile.findUnique
+                .mockResolvedValueOnce({ id: 'dp-1' } as any)
+                .mockResolvedValueOnce({
+                    id: 'dp-1', isAvailable: true, currentLat: 37.77, currentLng: -122.41,
+                } as any);
             prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+            prismaMock.driverProfile.updateMany.mockResolvedValueOnce({ count: 1 });
             prismaMock.order.findUnique.mockResolvedValueOnce({ status: 'PREPARING' } as any);
 
             const err = await acceptDelivery(req, res).catch((e) => e);
@@ -81,11 +151,17 @@ describe('Delivery Controller', () => {
                 },
             };
 
-            prismaMock.driverProfile.findUnique.mockResolvedValueOnce({ id: 'dp-1' } as any);
+            prismaMock.driverProfile.findUnique
+                .mockResolvedValueOnce({ id: 'dp-1' } as any)
+                .mockResolvedValueOnce({
+                    id: 'dp-1', isAvailable: true, currentLat: 37.77, currentLng: -122.41,
+                } as any);
             prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
-            prismaMock.order.findUnique.mockResolvedValueOnce({ status: 'READY' } as any);
+            prismaMock.driverProfile.updateMany.mockResolvedValueOnce({ count: 1 });
+            prismaMock.order.findUnique.mockResolvedValueOnce({
+                status: 'READY', restaurant: { lat: 37.78, lng: -122.42 },
+            } as any);
             prismaMock.delivery.create.mockResolvedValueOnce(mockDelivery as any);
-            prismaMock.driverProfile.update.mockResolvedValueOnce({} as any);
 
             await acceptDelivery(req, res);
 
@@ -94,12 +170,27 @@ describe('Delivery Controller', () => {
                     data: expect.objectContaining({ orderId: 'order-1', driverId: 'dp-1', status: 'ASSIGNED' }),
                 }),
             );
-            expect(prismaMock.driverProfile.update).toHaveBeenCalledWith(
+            expect(prismaMock.driverProfile.updateMany).toHaveBeenCalledWith(
                 expect.objectContaining({ data: { isAvailable: false } }),
             );
             expect(mockTo).toHaveBeenCalledWith('customer:cust-user-1');
             expect(mockTo).toHaveBeenCalledWith('restaurant:rest-1');
             expect(res.status).toHaveBeenCalledWith(201);
+        });
+
+        it('rejects accepting a ready order outside the delivery radius', async () => {
+            prismaMock.driverProfile.findUnique
+                .mockResolvedValueOnce({ id: 'dp-1' } as any)
+                .mockResolvedValueOnce({
+                    id: 'dp-1', isAvailable: true, currentLat: 0, currentLng: 0,
+                } as any);
+            prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+            prismaMock.order.findUnique.mockResolvedValueOnce({
+                status: 'READY', restaurant: { lat: 20, lng: 20 },
+            } as any);
+
+            await expect(acceptDelivery(req, res)).rejects.toMatchObject({ statusCode: 403 });
+            expect(prismaMock.delivery.create).not.toHaveBeenCalled();
         });
     });
 
@@ -175,7 +266,8 @@ describe('Delivery Controller', () => {
                 orderId: 'order-1',
                 order: { restaurant: { id: 'rest-1' }, customer: { userId: 'cu-1' } },
             } as any);
-            prismaMock.delivery.update.mockResolvedValueOnce(mockUpdated as any);
+            prismaMock.delivery.updateMany.mockResolvedValueOnce({ count: 1 });
+            prismaMock.delivery.findUniqueOrThrow.mockResolvedValueOnce(mockUpdated as any);
 
             await updateDeliveryStatus(req, res);
 
@@ -202,7 +294,8 @@ describe('Delivery Controller', () => {
                 orderId: 'order-1',
                 order: { restaurant: { id: 'rest-1' }, customer: { userId: 'cu-1' } },
             } as any);
-            prismaMock.delivery.update.mockResolvedValueOnce(mockUpdated as any);
+            prismaMock.delivery.updateMany.mockResolvedValueOnce({ count: 1 });
+            prismaMock.delivery.findUniqueOrThrow.mockResolvedValueOnce(mockUpdated as any);
 
             await updateDeliveryStatus(req, res);
 
@@ -230,7 +323,8 @@ describe('Delivery Controller', () => {
                 orderId: 'order-1',
                 order: { restaurant: { id: 'rest-1' }, customer: { userId: 'cu-1' } },
             } as any);
-            prismaMock.delivery.update.mockResolvedValueOnce(mockUpdated as any);
+            prismaMock.delivery.updateMany.mockResolvedValueOnce({ count: 1 });
+            prismaMock.delivery.findUniqueOrThrow.mockResolvedValueOnce(mockUpdated as any);
 
             await updateDeliveryStatus(req, res);
 
@@ -260,7 +354,8 @@ describe('Delivery Controller', () => {
                 orderId: 'order-1',
                 order: { restaurant: { id: 'rest-1' }, customer: { userId: 'cu-1' } },
             } as any);
-            prismaMock.delivery.update.mockResolvedValueOnce(mockUpdated as any);
+            prismaMock.delivery.updateMany.mockResolvedValueOnce({ count: 1 });
+            prismaMock.delivery.findUniqueOrThrow.mockResolvedValueOnce(mockUpdated as any);
 
             await updateDeliveryStatus(req, res);
 
@@ -270,6 +365,23 @@ describe('Delivery Controller', () => {
                 'delivery:status_updated',
                 expect.objectContaining({ status: 'AT_RESTAURANT' }),
             );
+        });
+
+        it('rejects a transition lost to a concurrent request without side effects', async () => {
+            prismaMock.driverProfile.findUnique.mockResolvedValueOnce({ id: 'dp-1' } as any);
+            prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+            prismaMock.delivery.findUnique.mockResolvedValueOnce({
+                id: 'del-1',
+                driverId: 'dp-1',
+                status: 'ASSIGNED',
+                orderId: 'order-1',
+                order: { restaurant: { id: 'rest-1' }, customer: { userId: 'cu-1' } },
+            } as any);
+            prismaMock.delivery.updateMany.mockResolvedValueOnce({ count: 0 });
+
+            await expect(updateDeliveryStatus(req, res)).rejects.toMatchObject({ statusCode: 409 });
+            expect(prismaMock.order.update).not.toHaveBeenCalled();
+            expect(mockEmit).not.toHaveBeenCalled();
         });
     });
 
@@ -548,6 +660,38 @@ describe('Delivery Controller', () => {
             );
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.json).toHaveBeenCalledWith({ success: true, data: mockDelivery });
+        });
+    });
+
+    describe('getDeliveryForOrder', () => {
+        it('returns a customer-owned delivery snapshot', async () => {
+            req = { user: { id: 'customer-user-1' }, params: { orderId: 'order-1' } };
+            prismaMock.customerProfile.findUnique.mockResolvedValueOnce({ id: 'customer-1' } as any);
+            prismaMock.order.findUnique.mockResolvedValueOnce({
+                customerId: 'customer-1',
+                deliveryAddress: '1 Main St',
+                delivery: {
+                    id: 'delivery-1', status: 'IN_TRANSIT',
+                    driver: { name: 'D', vehicleType: 'Bike', currentLat: 1, currentLng: 2 },
+                },
+            } as any);
+
+            await getDeliveryForOrder(req, res);
+
+            expect(res.json).toHaveBeenCalledWith({
+                success: true,
+                data: expect.objectContaining({ deliveryId: 'delivery-1', status: 'IN_TRANSIT', driverLat: 1 }),
+            });
+        });
+
+        it('rejects tracking another customer order', async () => {
+            req = { user: { id: 'customer-user-1' }, params: { orderId: 'order-1' } };
+            prismaMock.customerProfile.findUnique.mockResolvedValueOnce({ id: 'customer-1' } as any);
+            prismaMock.order.findUnique.mockResolvedValueOnce({
+                customerId: 'customer-2', deliveryAddress: 'x', delivery: null,
+            } as any);
+
+            await expect(getDeliveryForOrder(req, res)).rejects.toMatchObject({ statusCode: 403 });
         });
     });
 });

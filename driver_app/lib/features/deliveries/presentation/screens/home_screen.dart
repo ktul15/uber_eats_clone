@@ -7,6 +7,7 @@ import 'package:driver_app/features/auth/providers/auth_providers.dart';
 import 'package:driver_app/features/deliveries/domain/models/available_order.dart';
 import 'package:driver_app/features/deliveries/presentation/widgets/incoming_order_sheet.dart';
 import 'package:driver_app/features/deliveries/providers/delivery_providers.dart';
+import 'package:driver_app/features/deliveries/providers/availability_provider.dart';
 import 'package:driver_app/features/profile/providers/profile_providers.dart';
 import 'package:driver_app/shared/constants/api_constants.dart';
 
@@ -89,7 +90,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
 
     _socket!.onConnect((_) {
-      _socket!.emit('join', 'driver:$userId');
+      _socket!.emit('join', <String>['driver:$userId']);
       if (mounted) setState(() => _socketState = _SocketState.connected);
     });
 
@@ -130,7 +131,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       isScrollControlled: true,
       builder: (_) => IncomingOrderSheet(
         order: order,
-        onAccepted: () => context.goNamed(AppRoutes.activeDeliveryName),
+        onAccepted: () async {
+          await ref.read(driverAvailabilityProvider.notifier).stopForDelivery();
+          if (mounted) context.goNamed(AppRoutes.activeDeliveryName);
+        },
       ),
     ).whenComplete(() => _sheetVisible = false);
   }
@@ -140,6 +144,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
     final isConnected = _socketState == _SocketState.connected;
     final isError = _socketState == _SocketState.error;
+    final availability = ref.watch(driverAvailabilityProvider);
+    final availabilityStatus = availability.value ?? AvailabilityStatus.offline;
+    final isOnline = availabilityStatus == AvailabilityStatus.online;
 
     return Scaffold(
       appBar: AppBar(
@@ -158,13 +165,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                isConnected ? Icons.wifi : isError ? Icons.wifi_off : Icons.wifi_find,
+                isConnected
+                    ? Icons.wifi
+                    : isError
+                    ? Icons.wifi_off
+                    : Icons.wifi_find,
                 size: 64,
                 color: isConnected
                     ? theme.colorScheme.primary
                     : isError
-                        ? theme.colorScheme.error
-                        : theme.colorScheme.onSurfaceVariant,
+                    ? theme.colorScheme.error
+                    : theme.colorScheme.onSurfaceVariant,
               ),
               const SizedBox(height: 16),
               Text(
@@ -178,9 +189,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   color: isConnected
                       ? theme.colorScheme.primary
                       : isError
-                          ? theme.colorScheme.error
-                          : theme.colorScheme.onSurfaceVariant,
+                      ? theme.colorScheme.error
+                      : theme.colorScheme.onSurfaceVariant,
                 ),
+              ),
+              const SizedBox(height: 24),
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                title: Text(isOnline ? 'Online' : 'Offline'),
+                subtitle: Text(_availabilityMessage(availabilityStatus)),
+                secondary: Icon(
+                  isOnline ? Icons.location_on : Icons.location_off,
+                ),
+                value: isOnline,
+                onChanged:
+                    availabilityStatus == AvailabilityStatus.connecting ||
+                        availabilityStatus ==
+                            AvailabilityStatus.requestingPermission
+                    ? null
+                    : (value) {
+                        final notifier = ref.read(
+                          driverAvailabilityProvider.notifier,
+                        );
+                        value ? notifier.goOnline() : notifier.goOffline();
+                      },
               ),
               if (isConnected) ...[
                 const SizedBox(height: 8),
@@ -206,4 +238,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
+
+  String _availabilityMessage(AvailabilityStatus status) => switch (status) {
+    AvailabilityStatus.offline => 'Go online to receive nearby orders',
+    AvailabilityStatus.requestingPermission =>
+      'Waiting for location permission',
+    AvailabilityStatus.locationDisabled =>
+      'Turn on location services to go online',
+    AvailabilityStatus.permissionDenied =>
+      'Location permission is required to go online',
+    AvailabilityStatus.connecting => 'Updating availability…',
+    AvailabilityStatus.online => 'Your location is shared for nearby orders',
+    AvailabilityStatus.failure => 'Could not update availability. Try again.',
+  };
 }

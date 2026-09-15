@@ -1,0 +1,38 @@
+name: Flutter CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [customer_app, restaurant_dashboard, driver_app]
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.4'
+          channel: stable
+          cache: true
+      - name: Create placeholder Firebase options
+        run: cp lib/firebase_options.dart.example lib/firebase_options.dart
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: flutter pub run build_runner build --delete-conflicting-outputs
+      - name: Check generated files
+        run: git diff --exit-code -- '*.g.dart' '*.freezed.dart'
+      - run: flutter analyze
+      - run: flutter test

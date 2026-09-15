@@ -5,9 +5,7 @@ part 'active_delivery_dto.g.dart';
 
 @freezed
 abstract class ActiveMenuItemDto with _$ActiveMenuItemDto {
-  const factory ActiveMenuItemDto({
-    required String name,
-  }) = _ActiveMenuItemDto;
+  const factory ActiveMenuItemDto({required String name}) = _ActiveMenuItemDto;
 
   factory ActiveMenuItemDto.fromJson(Map<String, dynamic> json) =>
       _$ActiveMenuItemDtoFromJson(json);

@@ -11,8 +11,10 @@ class ApiConstants {
   // Delivery endpoints
   static const String acceptDelivery = '/api/deliveries/accept';
   static const String activeDelivery = '/api/deliveries/active';
+  static const String availability = '/api/deliveries/availability';
   static String updateDeliveryStatus(String id) => '/api/deliveries/$id/status';
-  static String updateDeliveryLocation(String id) => '/api/deliveries/$id/location';
+  static String updateDeliveryLocation(String id) =>
+      '/api/deliveries/$id/location';
 
   // Notification endpoints
   static const String fcmToken = '/api/users/fcm-token';

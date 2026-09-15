@@ -20,9 +20,10 @@ export async function sendPushNotification(fcmToken: string, payload: FcmPayload
             ...(payload.data && { data: payload.data }),
         });
         return true;
-    } catch (err: any) {
-        if (err.code === STALE_TOKEN_ERROR) return false;
-        console.error('[FCM] sendPushNotification error:', err.message);
+    } catch (err: unknown) {
+        const error = err as { code?: string; message?: string };
+        if (error.code === STALE_TOKEN_ERROR) return false;
+        console.error(JSON.stringify({ event: 'fcm.send_failed', message: error.message ?? 'Unknown error' }));
         return false;
     }
 }

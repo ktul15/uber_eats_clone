@@ -9,8 +9,8 @@ class FcmApiClient {
   static const _tokenKey = 'auth_token';
 
   FcmApiClient({required Dio dio, required FlutterSecureStorage storage})
-      : _dio = dio,
-        _storage = storage;
+    : _dio = dio,
+      _storage = storage;
 
   Future<void> registerToken(String fcmToken) async {
     try {
@@ -21,9 +21,22 @@ class FcmApiClient {
         data: {'fcmToken': fcmToken},
         options: options,
       );
-    } on DioException catch (e) {
-      // Silent fail — never block auth flow for FCM token registration
-      print('[FCM] Token registration failed: ${e.message}');
+    } on DioException {
+      // Push registration must never block authentication.
+    }
+  }
+
+  Future<void> removeToken(String fcmToken) async {
+    try {
+      final options = await _getAuthOptions();
+      if (options == null) return;
+      await _dio.delete(
+        ApiConstants.fcmToken,
+        data: {'fcmToken': fcmToken},
+        options: options,
+      );
+    } on DioException {
+      // Logout still proceeds if the network is unavailable.
     }
   }
 

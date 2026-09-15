@@ -46,7 +46,8 @@ class DirectionsService {
       final leg = (route['legs'] as List)[0] as Map<String, dynamic>;
 
       final encodedPolyline =
-          (route['overview_polyline'] as Map<String, dynamic>)['points'] as String;
+          (route['overview_polyline'] as Map<String, dynamic>)['points']
+              as String;
       final etaSeconds =
           (leg['duration'] as Map<String, dynamic>)['value'] as int;
       final endLocation = leg['end_location'] as Map<String, dynamic>;

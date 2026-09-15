@@ -50,6 +50,54 @@ final class OrderApiClientProvider
 
 String _$orderApiClientHash() => r'd2c79a31def08c94bea0a0a3557339066f7003ad';
 
+@ProviderFor(checkoutSessionStorage)
+final checkoutSessionStorageProvider = CheckoutSessionStorageProvider._();
+
+final class CheckoutSessionStorageProvider
+    extends
+        $FunctionalProvider<
+          CheckoutSessionStorage,
+          CheckoutSessionStorage,
+          CheckoutSessionStorage
+        >
+    with $Provider<CheckoutSessionStorage> {
+  CheckoutSessionStorageProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'checkoutSessionStorageProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$checkoutSessionStorageHash();
+
+  @$internal
+  @override
+  $ProviderElement<CheckoutSessionStorage> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  CheckoutSessionStorage create(Ref ref) {
+    return checkoutSessionStorage(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CheckoutSessionStorage value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CheckoutSessionStorage>(value),
+    );
+  }
+}
+
+String _$checkoutSessionStorageHash() =>
+    r'9a3413547406684a0f8ccfd65eefa4e814b5d356';
+
 @ProviderFor(PlaceOrder)
 final placeOrderProvider = PlaceOrderProvider._();
 
@@ -74,7 +122,7 @@ final class PlaceOrderProvider
   PlaceOrder create() => PlaceOrder();
 }
 
-String _$placeOrderHash() => r'e2c097f93038b445ce54d3e26d14d71950c75da9';
+String _$placeOrderHash() => r'ac0ef867397ce390949831baf0cee4df4c317079';
 
 abstract class _$PlaceOrder extends $AsyncNotifier<OrderDto?> {
   FutureOr<OrderDto?> build();
@@ -98,7 +146,7 @@ abstract class _$PlaceOrder extends $AsyncNotifier<OrderDto?> {
 final createPaymentIntentProvider = CreatePaymentIntentProvider._();
 
 final class CreatePaymentIntentProvider
-    extends $AsyncNotifierProvider<CreatePaymentIntent, String?> {
+    extends $AsyncNotifierProvider<CreatePaymentIntent, PaymentIntentData?> {
   CreatePaymentIntentProvider._()
     : super(
         from: null,
@@ -119,19 +167,21 @@ final class CreatePaymentIntentProvider
 }
 
 String _$createPaymentIntentHash() =>
-    r'82c0cf825c80c583c4870cbb0a62f77e37050617';
+    r'7609cae68039a34b7a21d44ed49e3d17e3d8a659';
 
-abstract class _$CreatePaymentIntent extends $AsyncNotifier<String?> {
-  FutureOr<String?> build();
+abstract class _$CreatePaymentIntent
+    extends $AsyncNotifier<PaymentIntentData?> {
+  FutureOr<PaymentIntentData?> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<String?>, String?>;
+    final ref =
+        this.ref as $Ref<AsyncValue<PaymentIntentData?>, PaymentIntentData?>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<String?>, String?>,
-              AsyncValue<String?>,
+              AnyNotifier<AsyncValue<PaymentIntentData?>, PaymentIntentData?>,
+              AsyncValue<PaymentIntentData?>,
               Object?,
               Object?
             >;
