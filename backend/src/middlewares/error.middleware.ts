@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/AppError';
+import multer from 'multer';
 
 /**
  * Global error handler middleware.
@@ -24,6 +25,19 @@ export const errorHandler = (
         res.status(err.statusCode).json({
             success: false,
             error: errorBody,
+        });
+        return;
+    }
+
+    if (err instanceof multer.MulterError) {
+        res.status(400).json({
+            success: false,
+            error: {
+                code: 'BAD_REQUEST',
+                message: err.code === 'LIMIT_FILE_SIZE'
+                    ? 'Image must be 5 MB or smaller'
+                    : 'Invalid image upload',
+            },
         });
         return;
     }

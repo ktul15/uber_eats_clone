@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:customer_app/app/routes.dart';
@@ -6,6 +7,8 @@ import 'package:customer_app/features/cart/domain/models/cart.dart';
 import 'package:customer_app/features/cart/providers/cart_providers.dart';
 import 'package:customer_app/features/orders/providers/order_providers.dart';
 import 'package:customer_app/features/profile/providers/profile_providers.dart';
+import 'package:customer_app/features/orders/data/checkout_session_storage.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({super.key});
@@ -17,6 +20,7 @@ class CheckoutScreen extends ConsumerStatefulWidget {
 class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   final _addressController = TextEditingController();
   bool _addressPrefilled = false;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -74,7 +78,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           return _CheckoutBody(
             cart: cart,
             addressController: _addressController,
-            isLoading: placeOrderState is AsyncLoading,
+            isLoading: _submitting || placeOrderState is AsyncLoading,
             onPlaceOrder: (address) => _onPlaceOrder(address, cart),
           );
         },
@@ -83,6 +87,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Future<void> _onPlaceOrder(String address, Cart cart) async {
+    if (_submitting) return;
     if (address.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a delivery address')),
@@ -90,34 +95,137 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       return;
     }
 
-    // Step 1: Create PaymentIntent on backend
-    final piClientSecret = await ref
-        .read(createPaymentIntentProvider.notifier)
-        .execute();
-
-    if (piClientSecret == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to initialise payment')),
-        );
-      }
+    const publishableKey = String.fromEnvironment('STRIPE_PUBLISHABLE_KEY');
+    if (publishableKey.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Card payments are not configured for this build.'),
+        ),
+      );
       return;
     }
 
-    // Step 2: Confirm payment via Stripe SDK
-    // Extract paymentIntentId from clientSecret (format: pi_xxx_secret_yyy)
-    final paymentIntentId = piClientSecret.split('_secret_').first;
+    setState(() => _submitting = true);
+    final sessionStorage = ref.read(checkoutSessionStorageProvider);
+    final cartSignature = _cartSignature(cart);
+    final paymentSheetStyle = Theme.of(context).brightness == Brightness.dark
+        ? ThemeMode.dark
+        : ThemeMode.light;
+    try {
+      var pending = await sessionStorage.read(cart.customerId);
+      if (pending != null &&
+          (pending.customerId != cart.customerId ||
+              pending.cartId != cart.id ||
+              pending.cartSignature != cartSignature ||
+              pending.deliveryAddress.trim() != address.trim())) {
+        await sessionStorage.clear(cart.customerId);
+        pending = null;
+      }
+      if (pending != null) {
+        final recovered = await ref
+            .read(placeOrderProvider.notifier)
+            .execute(
+              deliveryAddress: pending.deliveryAddress,
+              paymentIntentId: pending.paymentIntentId,
+            );
+        if (recovered != null) {
+          await sessionStorage.clear(cart.customerId);
+          return;
+        }
+        final recoveryError = ref.read(placeOrderProvider).error;
+        if (_isStaleCheckoutError(recoveryError)) {
+          await sessionStorage.clear(cart.customerId);
+          pending = null;
+        }
+      }
 
-    // TODO: In a full production app integrate flutter_stripe to confirm
-    // the card payment here. For portfolio demo we treat creation as success.
-
-    // Step 3: Place the order on the backend
-    await ref
-        .read(placeOrderProvider.notifier)
-        .execute(
+      if (pending == null) {
+        final paymentIntent = await ref
+            .read(createPaymentIntentProvider.notifier)
+            .execute();
+        if (paymentIntent == null) {
+          _showMessage('Unable to start payment. Please try again.');
+          return;
+        }
+        pending = PendingCheckout(
+          clientSecret: paymentIntent.clientSecret,
+          paymentIntentId: paymentIntent.paymentIntentId,
           deliveryAddress: address.trim(),
-          paymentIntentId: paymentIntentId,
+          customerId: cart.customerId,
+          cartId: cart.id,
+          cartSignature: cartSignature,
         );
+        await sessionStorage.write(pending);
+      }
+
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: pending.clientSecret,
+          merchantDisplayName: 'Uber Eats Clone',
+          returnURL: 'ubereatsclone://stripe-redirect',
+          allowsDelayedPaymentMethods: false,
+          style: paymentSheetStyle,
+        ),
+      );
+      await Stripe.instance.presentPaymentSheet();
+
+      final order = await ref
+          .read(placeOrderProvider.notifier)
+          .execute(
+            deliveryAddress: pending.deliveryAddress,
+            paymentIntentId: pending.paymentIntentId,
+          );
+      if (order != null) {
+        await sessionStorage.clear(cart.customerId);
+      } else {
+        _showMessage(
+          'Payment succeeded, but the order could not be saved. Tap Place Order to retry safely.',
+        );
+      }
+    } on StripeException catch (error) {
+      if (error.error.code == FailureCode.Canceled) {
+        await sessionStorage.clear(cart.customerId);
+        _showMessage('Payment cancelled. No order was placed.');
+      } else {
+        _showMessage(
+          error.error.localizedMessage ??
+              'Payment was not completed. Check your card and try again.',
+        );
+      }
+    } catch (_) {
+      _showMessage('Checkout failed. Please try again.');
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _cartSignature(Cart cart) {
+    final items =
+        cart.items
+            .map(
+              (item) =>
+                  '${item.menuItemId}:${item.quantity}:${(item.menuItem.price * 100).round()}',
+            )
+            .toList()
+          ..sort();
+    return '${cart.restaurantId}|${items.join('|')}';
+  }
+
+  bool _isStaleCheckoutError(Object? error) {
+    if (error is! DioException) return false;
+    final status = error.response?.statusCode;
+    final body = error.response?.data;
+    final message = body is Map
+        ? ((body['error'] as Map?)?['message']?.toString() ?? '')
+        : '';
+    return status == 409 || message.contains('does not match the current cart');
   }
 }
 

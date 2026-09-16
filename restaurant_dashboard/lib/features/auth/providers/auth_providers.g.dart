@@ -147,7 +147,7 @@ final class LoginProvider extends $AsyncNotifierProvider<Login, User?> {
   Login create() => Login();
 }
 
-String _$loginHash() => r'877584faa8439930bde0e908a519db950a22cd7f';
+String _$loginHash() => r'ede6f0cc18643116b9776150f04a4358671a6593';
 
 abstract class _$Login extends $AsyncNotifier<User?> {
   FutureOr<User?> build();
@@ -190,7 +190,7 @@ final class RegisterProvider extends $AsyncNotifierProvider<Register, User?> {
   Register create() => Register();
 }
 
-String _$registerHash() => r'048af3f98599880e3d1a919c105738977483e12a';
+String _$registerHash() => r'e1d33990ccd77030c2ca8bf3fc1386c9a4b8c0ed';
 
 abstract class _$Register extends $AsyncNotifier<User?> {
   FutureOr<User?> build();
@@ -203,6 +203,49 @@ abstract class _$Register extends $AsyncNotifier<User?> {
             as $ClassProviderElement<
               AnyNotifier<AsyncValue<User?>, User?>,
               AsyncValue<User?>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+@ProviderFor(Logout)
+final logoutProvider = LogoutProvider._();
+
+final class LogoutProvider extends $AsyncNotifierProvider<Logout, void> {
+  LogoutProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'logoutProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$logoutHash();
+
+  @$internal
+  @override
+  Logout create() => Logout();
+}
+
+String _$logoutHash() => r'08ee33c168dda1154c831da1b99625272dc49a3c';
+
+abstract class _$Logout extends $AsyncNotifier<void> {
+  FutureOr<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, void>,
+              AsyncValue<void>,
               Object?,
               Object?
             >;

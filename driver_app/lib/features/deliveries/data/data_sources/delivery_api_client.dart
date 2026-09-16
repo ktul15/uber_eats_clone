@@ -10,8 +10,8 @@ class DeliveryApiClient {
   static const _tokenKey = 'auth_token';
 
   DeliveryApiClient({required Dio dio, required FlutterSecureStorage storage})
-      : _dio = dio,
-        _storage = storage;
+    : _dio = dio,
+      _storage = storage;
 
   Future<Options> _authOptions() async {
     final token = await _storage.read(key: _tokenKey);
@@ -27,9 +27,28 @@ class DeliveryApiClient {
     );
   }
 
+  Future<void> updateAvailability({
+    required bool isAvailable,
+    double? lat,
+    double? lng,
+  }) async {
+    final options = await _authOptions();
+    await _dio.patch(
+      ApiConstants.availability,
+      data: {
+        'isAvailable': isAvailable,
+        ...?lat == null ? null : {'lat': lat, 'lng': lng},
+      },
+      options: options,
+    );
+  }
+
   Future<ActiveDeliveryDto?> getActiveDelivery() async {
     final options = await _authOptions();
-    final response = await _dio.get(ApiConstants.activeDelivery, options: options);
+    final response = await _dio.get(
+      ApiConstants.activeDelivery,
+      options: options,
+    );
     final data = (response.data as Map<String, dynamic>)['data'];
     if (data == null) return null;
     return ActiveDeliveryDto.fromJson(data as Map<String, dynamic>);

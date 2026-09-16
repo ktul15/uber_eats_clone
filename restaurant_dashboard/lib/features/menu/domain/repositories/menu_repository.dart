@@ -1,4 +1,5 @@
 import 'package:restaurant_dashboard/features/menu/data/data_sources/menu_api_client.dart';
+import 'package:restaurant_dashboard/features/menu/data/models/restaurant_dto.dart';
 import 'package:restaurant_dashboard/features/menu/domain/models/menu_item.dart';
 import 'package:restaurant_dashboard/features/menu/domain/models/restaurant.dart';
 
@@ -18,6 +19,8 @@ class MenuRepository {
             isActive: dto.isActive,
             description: dto.description,
             address: dto.address,
+            lat: dto.lat,
+            lng: dto.lng,
             imageUrl: dto.imageUrl,
             menuItems: dto.menuItems
                 .map(
@@ -52,6 +55,11 @@ class MenuRepository {
           ),
         )
         .toList();
+  }
+
+  Future<Restaurant> createRestaurant(Map<String, dynamic> payload) async {
+    final dto = await _apiClient.createRestaurant(payload);
+    return _mapRestaurant(dto);
   }
 
   Future<MenuItem> addMenuItem({
@@ -113,6 +121,10 @@ class MenuRepository {
       payload: payload,
     );
 
+    return _mapRestaurant(dto);
+  }
+
+  Restaurant _mapRestaurant(RestaurantDto dto) {
     return Restaurant(
       id: dto.id,
       ownerId: dto.ownerId,
@@ -120,6 +132,8 @@ class MenuRepository {
       isActive: dto.isActive,
       description: dto.description,
       address: dto.address,
+      lat: dto.lat,
+      lng: dto.lng,
       imageUrl: dto.imageUrl,
       menuItems: dto.menuItems
           .map(

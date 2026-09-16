@@ -2,7 +2,7 @@
 
 Developer-oriented reference for running the system and performing a focused smoke test. For full Phase 8 regression, security, accessibility, resilience, evidence collection, and release exit criteria, use [QA_GUIDE.md](QA_GUIDE.md).
 
-Expected results below describe the intended behavior. See **Known Current Limitations** before executing the end-to-end flow.
+Expected results below describe the intended behavior. See **Current Release Scope** before executing the end-to-end flow.
 
 ---
 
@@ -82,20 +82,13 @@ All three apps currently use `http://localhost:8000`. That generally works for d
 
 ---
 
-## Known Current Limitations
+## Current Release Scope
 
-These are open QA blockers in the current implementation:
+Issue #35 adds Stripe Payment Sheet checkout with server-side PaymentIntent binding and idempotent order creation, driver availability and pre-assignment location, proximity enforcement, owner restaurant creation, authorized socket-room joins, restaurant FCM registration, working smoke tests, and active CI for `dev` and `main`.
 
-- Registration immediately returns a JWT; OTP/email verification mentioned in the project roadmap is not implemented.
-- The customer app creates a Stripe PaymentIntent but does not collect/confirm a card payment, so a normal UI checkout cannot produce Stripe status `succeeded`. The backend also does not bind a succeeded intent's amount/customer/cart metadata to the order or prevent reuse.
-- New drivers default to unavailable and have no go-online/API flow; pre-assignment location is also missing. The current nearby-driver query permits missing coordinates instead of rejecting or explicitly handling them.
-- The restaurant dashboard has no restaurant-creation screen; an authenticated `POST /api/restaurants` request is currently required for setup.
-- Restaurant and driver socket clients emit a scalar room string while the backend expects a list. Customer tracking never joins its customer room. The server does not verify restaurant ownership when an owner requests a room, and the dashboard joins only the first owned restaurant.
-- The restaurant dashboard does not register an FCM token, so owner push notifications cannot be validated end to end.
-- The driver smoke test fails because it lacks `ProviderScope` and expects stale screen text.
-- GitHub Actions currently has its build, analysis, and test commands commented out, and its production trigger uses `master` instead of the required `main` branch.
+OTP/email verification remains outside the current release scope. Registration immediately returns a JWT; the Phase 2 roadmap wording is historical and does not describe the current acceptance behavior.
 
-Treat these as defects to resolve in issue #35. Fixture-assisted testing can validate downstream behavior, but it is not a successful end-to-end result.
+Real Stripe, Firebase, Maps, and device-permission scenarios still require the service configuration described in [EXTERNAL_SERVICES_SETUP.md](EXTERNAL_SERVICES_SETUP.md). Fixture-assisted testing can validate downstream behavior, but it is not a successful end-to-end result for those integrations.
 
 ---
 
@@ -222,7 +215,7 @@ Current-build check: an unconfirmed PaymentIntent must be rejected by the backen
 | # | Action | Expected |
 |---|--------|----------|
 | 1 | Login as OWNER | Home shows list of owned restaurants |
-| 2 | No restaurants created yet | Empty state instructs the owner to use the backend API; record the missing creation UI as a blocker if in scope |
+| 2 | No restaurants created yet | Empty state presents the restaurant-creation form; valid details create the first restaurant |
 | 3 | Tap the cover-image camera button on a restaurant card | Photo library picker opens |
 | 4 | Select image | Image uploaded, restaurant card updates |
 | 5 | Tap restaurant card → navigate to menu | Menu management screen opens |
@@ -271,7 +264,7 @@ Current-build check: an unconfirmed PaymentIntent must be rejected by the backen
 
 #### Home — Available Deliveries
 
-> Requires: Customer placed order, restaurant marked it READY, and driver is available with a location within 10 km. The current app lacks the go-online/pre-assignment location flow, so a temporary QA fixture is required until that blocker is fixed.
+> Requires: Customer placed order, restaurant marked it READY, and driver used the app control to go online with a fresh location within 10 km.
 
 | # | Action | Expected |
 |---|--------|----------|
@@ -308,12 +301,12 @@ Current-build check: an unconfirmed PaymentIntent must be rejected by the backen
 
 ## End-to-End Happy Path
 
-Run all four components concurrently and walk through this flow after the known payment, driver availability, and socket blockers are fixed. Until then, record any fixture-assisted run as a partial downstream regression:
+Run all four components concurrently and walk through this supported flow. Real Stripe, Firebase, Maps, and location behavior requires the test configuration described above:
 
 ```
 1. [Customer App]       Register as CUSTOMER
-2. [Restaurant Dashboard/API] Register as OWNER → create restaurant through the API until creation UI exists → add menu items
-3. [Driver App]         Register as DRIVER (set vehicle + license, ensure location near restaurant)
+2. [Restaurant Dashboard] Register as OWNER → create a restaurant → add menu items
+3. [Driver App]         Register as DRIVER → set vehicle/license → go online near the restaurant
 4. [Customer App]       Browse → open restaurant → add items to cart → checkout → place order
 5. [Restaurant Dashboard] Active Orders → new order appears in real time → mark READY
 6. [Driver App]         Incoming order modal appears → Accept
@@ -383,7 +376,7 @@ npm run build
 npm test -- --runInBand
 ```
 
-With a reachable `TEST_DATABASE_URL`, the backend should pass 104 tests total, including 5 PostgreSQL integration tests. Without it, the normal suite reports 99 passed and 5 skipped; `npm run test:integration` intentionally fails if the variable is absent.
+With a reachable `TEST_DATABASE_URL`, the backend should pass 138 tests total, including 8 PostgreSQL integration tests. Without it, the normal suite reports 130 passed and 8 skipped; `npm run test:integration` intentionally fails if the variable is absent.
 
 In each Flutter app, run:
 

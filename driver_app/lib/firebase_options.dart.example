@@ -1,0 +1,34 @@
+// Placeholder used by CI. Run `flutterfire configure` for a local device build.
+import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
+
+class DefaultFirebaseOptions {
+  static FirebaseOptions get currentPlatform {
+    if (kIsWeb) return web;
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.iOS || TargetPlatform.macOS => ios,
+      _ => android,
+    };
+  }
+
+  static const android = FirebaseOptions(
+    apiKey: 'YOUR_FIREBASE_API_KEY',
+    appId: 'YOUR_FIREBASE_ANDROID_APP_ID',
+    messagingSenderId: 'YOUR_FIREBASE_SENDER_ID',
+    projectId: 'YOUR_FIREBASE_PROJECT_ID',
+  );
+  static const ios = FirebaseOptions(
+    apiKey: 'YOUR_FIREBASE_API_KEY',
+    appId: 'YOUR_FIREBASE_IOS_APP_ID',
+    messagingSenderId: 'YOUR_FIREBASE_SENDER_ID',
+    projectId: 'YOUR_FIREBASE_PROJECT_ID',
+    iosBundleId: 'com.ubereatsclone.driverApp',
+  );
+  static const web = FirebaseOptions(
+    apiKey: 'YOUR_FIREBASE_API_KEY',
+    appId: 'YOUR_FIREBASE_WEB_APP_ID',
+    messagingSenderId: 'YOUR_FIREBASE_SENDER_ID',
+    projectId: 'YOUR_FIREBASE_PROJECT_ID',
+  );
+}

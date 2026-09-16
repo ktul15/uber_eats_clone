@@ -1,9 +1,7 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/prisma';
 import { AuthRequest } from '../types/auth.types';
 import { AppError } from '../utils/AppError';
-
-const prisma = new PrismaClient();
 
 // CREATE RESTAURANT (OWNER only)
 export const createRestaurant = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -11,17 +9,18 @@ export const createRestaurant = async (req: AuthRequest, res: Response): Promise
     const ownerId = req.user?.id;
 
     if (!ownerId) throw AppError.unauthorized('User not found');
-    if (!name || !address) throw AppError.badRequest('Name and address are required');
-
+    if (typeof name !== 'string' || typeof address !== 'string') {
+        throw AppError.badRequest('Name and address are required');
+    }
     const restaurant = await prisma.restaurant.create({
         data: {
             ownerId,
-            name,
-            description,
-            address,
+            name: name.trim(),
+            description: description?.trim() || null,
+            address: address.trim(),
             lat,
             lng,
-            imageUrl,
+            imageUrl: imageUrl?.trim() || null,
             isActive: true, // Auto-active for now, can be toggled later
         },
     });

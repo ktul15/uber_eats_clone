@@ -9,7 +9,9 @@ class OrderApiClient {
   Future<List<OrderDto>> getOrders() async {
     final response = await _dio.get('/api/orders');
     final data = (response.data as Map<String, dynamic>)['data'] as List;
-    return data.map((e) => OrderDto.fromJson(e as Map<String, dynamic>)).toList();
+    return data
+        .map((e) => OrderDto.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<OrderDto> updateOrderStatus(String orderId, String status) async {

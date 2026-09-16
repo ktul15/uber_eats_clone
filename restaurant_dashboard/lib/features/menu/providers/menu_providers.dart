@@ -46,6 +46,18 @@ class MyRestaurantsController extends _$MyRestaurantsController {
     });
   }
 
+  Future<bool> createRestaurant(Map<String, dynamic> payload) async {
+    final previous = state.value ?? const <Restaurant>[];
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final created = await ref
+          .read(menuRepositoryProvider)
+          .createRestaurant(payload);
+      return [...previous, created];
+    });
+    return state.hasValue;
+  }
+
   Future<void> updateRestaurantImage(
     String restaurantId,
     String imageUrl,

@@ -283,8 +283,18 @@ class _StatusChip extends StatelessWidget {
 
 String _formatDate(DateTime dateTime) {
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   final local = dateTime.toLocal();
   return '${months[local.month - 1]} ${local.day}, ${local.year}';

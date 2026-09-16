@@ -116,7 +116,7 @@ final class MyRestaurantsControllerProvider
 }
 
 String _$myRestaurantsControllerHash() =>
-    r'5eaa8a6feb8a89657d9a2c3049d35946a18800f2';
+    r'68b285ee02d5e86b3d70d867f691dd8a590aa5a1';
 
 abstract class _$MyRestaurantsController
     extends $AsyncNotifier<List<Restaurant>> {

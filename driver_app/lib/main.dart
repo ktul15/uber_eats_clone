@@ -16,11 +16,13 @@ void main() async {
 
   // Non-blocking: permission dialog shows after app is already rendered
   unawaited(FirebaseMessaging.instance.requestPermission());
-  unawaited(FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-    alert: true,
-    badge: true,
-    sound: true,
-  ));
+  unawaited(
+    FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    ),
+  );
 
   // Single client instance reused for all token refresh events
   const storage = FlutterSecureStorage();

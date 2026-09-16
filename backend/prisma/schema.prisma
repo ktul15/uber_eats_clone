@@ -132,6 +132,7 @@ model MenuItem {
 
 model Order {
   id              String      @id @default(uuid())
+  paymentIntentId String?     @unique
   customerId      String
   restaurantId    String
   status          OrderStatus @default(PENDING)

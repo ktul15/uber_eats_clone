@@ -8,19 +8,17 @@ import {
     getRestaurantById,
     updateRestaurant
 } from '../controllers/restaurant.controller';
+import { validateCreateRestaurant } from '../validators/restaurant.validator';
 
 const router = Router();
 
 // Public routes
 router.get('/', asyncHandler(getAllRestaurants));
-router.get('/:id', asyncHandler(getRestaurantById));
 
 // Protected routes (OWNER only)
-router.use(authenticate);
-router.use(requireRole(['OWNER']));
-
-router.get('/owner/my', asyncHandler(getMyRestaurants));
-router.post('/', asyncHandler(createRestaurant));
-router.put('/:id', asyncHandler(updateRestaurant));
+router.get('/owner/my', authenticate, requireRole(['OWNER']), asyncHandler(getMyRestaurants));
+router.post('/', authenticate, requireRole(['OWNER']), validateCreateRestaurant, asyncHandler(createRestaurant));
+router.put('/:id', authenticate, requireRole(['OWNER']), asyncHandler(updateRestaurant));
+router.get('/:id', asyncHandler(getRestaurantById));
 
 export default router;

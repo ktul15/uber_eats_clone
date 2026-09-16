@@ -7,7 +7,11 @@ class IncomingOrderSheet extends ConsumerStatefulWidget {
   final AvailableOrder order;
   final VoidCallback onAccepted;
 
-  const IncomingOrderSheet({super.key, required this.order, required this.onAccepted});
+  const IncomingOrderSheet({
+    super.key,
+    required this.order,
+    required this.onAccepted,
+  });
 
   @override
   ConsumerState<IncomingOrderSheet> createState() => _IncomingOrderSheetState();
@@ -37,7 +41,9 @@ class _IncomingOrderSheetState extends ConsumerState<IncomingOrderSheet>
   }
 
   Future<void> _accept() async {
-    await ref.read(acceptDeliveryProvider.notifier).execute(widget.order.orderId);
+    await ref
+        .read(acceptDeliveryProvider.notifier)
+        .execute(widget.order.orderId);
     if (!mounted) return;
     final acceptState = ref.read(acceptDeliveryProvider);
     if (acceptState.hasError) {
@@ -113,7 +119,9 @@ class _IncomingOrderSheetState extends ConsumerState<IncomingOrderSheet>
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: isLoading ? null : () => Navigator.of(context).pop(),
+                    onPressed: isLoading
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     child: const Text('Decline'),
                   ),
                 ),
@@ -171,10 +179,7 @@ class _InfoRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              Text(
-                value,
-                style: valueStyle ?? theme.textTheme.bodyLarge,
-              ),
+              Text(value, style: valueStyle ?? theme.textTheme.bodyLarge),
             ],
           ),
         ),

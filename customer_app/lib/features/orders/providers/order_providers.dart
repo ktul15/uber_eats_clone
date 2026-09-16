@@ -2,6 +2,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:customer_app/features/cart/providers/cart_providers.dart';
 import 'package:customer_app/features/orders/data/data_sources/order_api_client.dart';
 import 'package:customer_app/features/orders/data/models/order_dto.dart';
+import 'package:customer_app/features/orders/data/models/payment_intent_data.dart';
+import 'package:customer_app/features/orders/data/checkout_session_storage.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:customer_app/shared/providers/dio_provider.dart';
 
 part 'order_providers.g.dart';
@@ -14,6 +17,10 @@ OrderApiClient orderApiClient(Ref ref) {
   return OrderApiClient(dio);
 }
 
+@riverpod
+CheckoutSessionStorage checkoutSessionStorage(Ref ref) =>
+    CheckoutSessionStorage(const FlutterSecureStorage());
+
 // --- Place Order Notifier ---
 
 @riverpod
@@ -21,7 +28,7 @@ class PlaceOrder extends _$PlaceOrder {
   @override
   FutureOr<OrderDto?> build() => null;
 
-  Future<void> execute({
+  Future<OrderDto?> execute({
     required String deliveryAddress,
     required String paymentIntentId,
   }) async {
@@ -36,6 +43,7 @@ class PlaceOrder extends _$PlaceOrder {
       ref.invalidate(cartProvider);
       return order;
     });
+    return state.value;
   }
 }
 
@@ -44,9 +52,9 @@ class PlaceOrder extends _$PlaceOrder {
 @riverpod
 class CreatePaymentIntent extends _$CreatePaymentIntent {
   @override
-  FutureOr<String?> build() => null;
+  FutureOr<PaymentIntentData?> build() => null;
 
-  Future<String?> execute() async {
+  Future<PaymentIntentData?> execute() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() {
       final client = ref.read(orderApiClientProvider);

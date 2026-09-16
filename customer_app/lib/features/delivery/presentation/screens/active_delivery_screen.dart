@@ -15,11 +15,7 @@ class ActiveDeliveryScreen extends ConsumerStatefulWidget {
   final String orderId;
   final Map<String, dynamic>? extra;
 
-  const ActiveDeliveryScreen({
-    super.key,
-    required this.orderId,
-    this.extra,
-  });
+  const ActiveDeliveryScreen({super.key, required this.orderId, this.extra});
 
   @override
   ConsumerState<ActiveDeliveryScreen> createState() =>
@@ -62,7 +58,11 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
   void _onAnimTick() {
     if (_animStart == null || _animEnd == null) return;
     setState(() {
-      _animatedDriverPos = _lerpLatLng(_animStart!, _animEnd!, _markerAnim.value);
+      _animatedDriverPos = _lerpLatLng(
+        _animStart!,
+        _animEnd!,
+        _markerAnim.value,
+      );
     });
   }
 
@@ -75,12 +75,16 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
 
   void _maybeFollowDriver(LatLng target) {
     if (_routeFitted) return;
-    _mapController.future
-        .then((c) => c.animateCamera(CameraUpdate.newLatLng(target)));
+    _mapController.future.then(
+      (c) => c.animateCamera(CameraUpdate.newLatLng(target)),
+    );
   }
 
   Future<void> _fitRouteBounds(
-      List<LatLng> points, double destLat, double destLng) async {
+    List<LatLng> points,
+    double destLat,
+    double destLng,
+  ) async {
     if (points.isEmpty) return;
     double minLat = points.first.latitude, maxLat = points.first.latitude;
     double minLng = points.first.longitude, maxLng = points.first.longitude;
@@ -95,13 +99,15 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
     minLng = minLng < destLng ? minLng : destLng;
     maxLng = maxLng > destLng ? maxLng : destLng;
     final c = await _mapController.future;
-    c.animateCamera(CameraUpdate.newLatLngBounds(
-      LatLngBounds(
-        southwest: LatLng(minLat, minLng),
-        northeast: LatLng(maxLat, maxLng),
+    c.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          southwest: LatLng(minLat, minLng),
+          northeast: LatLng(maxLat, maxLng),
+        ),
+        64.0,
       ),
-      64.0,
-    ));
+    );
   }
 
   @override
@@ -118,8 +124,11 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
             next.routePoints.isNotEmpty &&
             next.destination != null) {
           _routeFitted = true;
-          _fitRouteBounds(next.routePoints, next.destination!.latitude,
-              next.destination!.longitude);
+          _fitRouteBounds(
+            next.routePoints,
+            next.destination!.latitude,
+            next.destination!.longitude,
+          );
         }
         return;
       }
@@ -154,8 +163,11 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
           next.routePoints.isNotEmpty &&
           next.destination != null) {
         _routeFitted = true;
-        _fitRouteBounds(next.routePoints, next.destination!.latitude,
-            next.destination!.longitude);
+        _fitRouteBounds(
+          next.routePoints,
+          next.destination!.latitude,
+          next.destination!.longitude,
+        );
       }
     });
 
@@ -201,8 +213,7 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
             Container(
               width: double.infinity,
               color: theme.colorScheme.secondaryContainer,
-              padding:
-                  const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -222,10 +233,7 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
                 ],
               ),
             ),
-          SizedBox(
-            height: 260,
-            child: _buildMap(deliveryState, theme),
-          ),
+          SizedBox(height: 260, child: _buildMap(deliveryState, theme)),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
@@ -245,10 +253,7 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
                   ),
                   const SizedBox(height: 8),
                   DeliveryStatusStepper(status: deliveryState.status),
-                  Divider(
-                    height: 1,
-                    color: theme.colorScheme.outlineVariant,
-                  ),
+                  Divider(height: 1, color: theme.colorScheme.outlineVariant),
                   const SizedBox(height: 12),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -267,10 +272,7 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
                     vehicleType: deliveryState.driverVehicleType,
                   ),
                   if (widget.extra != null) ...[
-                    Divider(
-                      height: 1,
-                      color: theme.colorScheme.outlineVariant,
-                    ),
+                    Divider(height: 1, color: theme.colorScheme.outlineVariant),
                     _OrderSummaryRow(extra: widget.extra!),
                   ],
                   if (isDelivered) ...[
@@ -334,22 +336,26 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
     };
 
     if (deliveryState.destination != null) {
-      markers.add(Marker(
-        markerId: const MarkerId('destination'),
-        position: deliveryState.destination!,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-        infoWindow: const InfoWindow(title: 'Delivery Location'),
-      ));
+      markers.add(
+        Marker(
+          markerId: const MarkerId('destination'),
+          position: deliveryState.destination!,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          infoWindow: const InfoWindow(title: 'Delivery Location'),
+        ),
+      );
     }
 
     final polylines = <Polyline>{};
     if (deliveryState.routePoints.isNotEmpty) {
-      polylines.add(Polyline(
-        polylineId: const PolylineId('route'),
-        points: deliveryState.routePoints,
-        color: theme.colorScheme.primary,
-        width: 5,
-      ));
+      polylines.add(
+        Polyline(
+          polylineId: const PolylineId('route'),
+          points: deliveryState.routePoints,
+          color: theme.colorScheme.primary,
+          width: 5,
+        ),
+      );
     }
 
     return GoogleMap(
@@ -370,12 +376,12 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen>
   }
 
   String _statusSubtitle(String status) => switch (status.toUpperCase()) {
-        'ASSIGNED' => 'Driver is heading to the restaurant',
-        'AT_RESTAURANT' => 'Driver is picking up your order',
-        'IN_TRANSIT' => 'Driver is on the way to you',
-        'COMPLETED' => 'Order delivered!',
-        _ => 'Waiting for driver assignment…',
-      };
+    'ASSIGNED' => 'Driver is heading to the restaurant',
+    'AT_RESTAURANT' => 'Driver is picking up your order',
+    'IN_TRANSIT' => 'Driver is on the way to you',
+    'COMPLETED' => 'Order delivered!',
+    _ => 'Waiting for driver assignment…',
+  };
 }
 
 class _OrderSummaryRow extends StatelessWidget {

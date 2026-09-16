@@ -39,7 +39,9 @@ class _ActiveOrdersScreenState extends ConsumerState<ActiveOrdersScreen> {
     final restaurants = await ref.read(myRestaurantsControllerProvider.future);
     if (!mounted || restaurants.isEmpty) return;
 
-    final restaurantId = restaurants.first.id;
+    final restaurantRooms = restaurants
+        .map((restaurant) => 'restaurant:${restaurant.id}')
+        .toList(growable: false);
 
     _socket = io.io(
       ApiConstants.baseUrl,
@@ -51,7 +53,7 @@ class _ActiveOrdersScreenState extends ConsumerState<ActiveOrdersScreen> {
     );
 
     _socket!.onConnect((_) {
-      _socket!.emit('join', 'restaurant:$restaurantId');
+      _socket!.emit('join', restaurantRooms);
     });
 
     _socket!.on('order:new', (_) {
@@ -85,10 +87,7 @@ class _ActiveOrdersScreenState extends ConsumerState<ActiveOrdersScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                'Failed to load orders',
-                style: theme.textTheme.titleMedium,
-              ),
+              Text('Failed to load orders', style: theme.textTheme.titleMedium),
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: () =>

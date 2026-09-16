@@ -5,11 +5,7 @@ class RestaurantCard extends StatelessWidget {
   final Restaurant restaurant;
   final VoidCallback? onTap;
 
-  const RestaurantCard({
-    super.key,
-    required this.restaurant,
-    this.onTap,
-  });
+  const RestaurantCard({super.key, required this.restaurant, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -24,10 +20,7 @@ class RestaurantCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: _buildImage(),
-            ),
+            AspectRatio(aspectRatio: 16 / 9, child: _buildImage()),
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(

@@ -75,9 +75,7 @@ class OrderHistoryController extends _$OrderHistoryController {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final orders = await ref.read(orderRepositoryProvider).getOrders();
-      return orders
-          .where((o) => _historyStatuses.contains(o.status))
-          .toList();
+      return orders.where((o) => _historyStatuses.contains(o.status)).toList();
     });
   }
 }

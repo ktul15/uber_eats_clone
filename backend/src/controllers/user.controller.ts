@@ -64,6 +64,26 @@ export const registerFcmToken = asyncHandler(async (req: AuthRequest, res: Respo
     res.status(200).json({ success: true, data: { message: 'FCM token registered' } });
 });
 
+export const removeFcmToken = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) throw AppError.unauthorized('User not authenticated');
+
+    const { fcmToken } = req.body as { fcmToken?: unknown };
+    if (typeof fcmToken !== 'string' || fcmToken.trim() === '') {
+        throw AppError.badRequest('fcmToken is required');
+    }
+
+    const result = await prisma.user.updateMany({
+        where: { id: userId, fcmToken: fcmToken.trim() },
+        data: { fcmToken: null },
+    });
+
+    res.status(200).json({
+        success: true,
+        data: { removed: result.count === 1 },
+    });
+});
+
 export const updateProfile = asyncHandler(async (req: AuthRequest, res: Response) => {
     const userRole = req.user?.role;
     const userId = req.user?.id;

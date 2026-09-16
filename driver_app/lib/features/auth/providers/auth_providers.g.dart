@@ -209,3 +209,46 @@ abstract class _$Register extends $AsyncNotifier<User?> {
     element.handleCreate(ref, build);
   }
 }
+
+@ProviderFor(Logout)
+final logoutProvider = LogoutProvider._();
+
+final class LogoutProvider extends $AsyncNotifierProvider<Logout, void> {
+  LogoutProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'logoutProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$logoutHash();
+
+  @$internal
+  @override
+  Logout create() => Logout();
+}
+
+String _$logoutHash() => r'62180deff241fb6a70240ccd091767bbf0dacd2e';
+
+abstract class _$Logout extends $AsyncNotifier<void> {
+  FutureOr<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, void>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

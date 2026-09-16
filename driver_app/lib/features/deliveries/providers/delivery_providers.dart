@@ -39,10 +39,12 @@ Future<ActiveDelivery?> activeDelivery(Ref ref) async {
     deliveryAddress: dto.order.deliveryAddress,
     totalAmount: double.parse(dto.order.totalAmount),
     orderItems: dto.order.orderItems
-        .map((item) => ActiveOrderItem(
-              name: item.menuItem.name,
-              quantity: item.quantity,
-            ))
+        .map(
+          (item) => ActiveOrderItem(
+            name: item.menuItem.name,
+            quantity: item.quantity,
+          ),
+        )
         .toList(),
   );
 }

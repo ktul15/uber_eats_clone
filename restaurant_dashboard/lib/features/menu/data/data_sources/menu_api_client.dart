@@ -14,6 +14,13 @@ class MenuApiClient {
     return data.map((json) => RestaurantDto.fromJson(json)).toList();
   }
 
+  Future<RestaurantDto> createRestaurant(Map<String, dynamic> payload) async {
+    final response = await _dio.post(ApiConstants.restaurants, data: payload);
+    return RestaurantDto.fromJson(
+      (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>,
+    );
+  }
+
   Future<List<MenuItemDto>> getMenu(String restaurantId) async {
     final response = await _dio.get(ApiConstants.restaurantMenu(restaurantId));
     final data = (response.data as Map<String, dynamic>)['data'] as List;

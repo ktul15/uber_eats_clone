@@ -9,34 +9,32 @@ enum DeliveryStatus {
   completed;
 
   static DeliveryStatus fromString(String s) => switch (s) {
-        'ASSIGNED' => assigned,
-        'AT_RESTAURANT' => atRestaurant,
-        'IN_TRANSIT' => inTransit,
-        'COMPLETED' => completed,
-        _ => throw ArgumentError('Unknown DeliveryStatus: $s'),
-      };
+    'ASSIGNED' => assigned,
+    'AT_RESTAURANT' => atRestaurant,
+    'IN_TRANSIT' => inTransit,
+    'COMPLETED' => completed,
+    _ => throw ArgumentError('Unknown DeliveryStatus: $s'),
+  };
 
   String get apiValue => switch (this) {
-        assigned => 'ASSIGNED',
-        atRestaurant => 'AT_RESTAURANT',
-        inTransit => 'IN_TRANSIT',
-        completed => 'COMPLETED',
-      };
+    assigned => 'ASSIGNED',
+    atRestaurant => 'AT_RESTAURANT',
+    inTransit => 'IN_TRANSIT',
+    completed => 'COMPLETED',
+  };
 
   DeliveryStatus? get next => switch (this) {
-        assigned => atRestaurant,
-        atRestaurant => inTransit,
-        inTransit => completed,
-        completed => null,
-      };
+    assigned => atRestaurant,
+    atRestaurant => inTransit,
+    inTransit => completed,
+    completed => null,
+  };
 }
 
 @freezed
 abstract class ActiveOrderItem with _$ActiveOrderItem {
-  const factory ActiveOrderItem({
-    required String name,
-    required int quantity,
-  }) = _ActiveOrderItem;
+  const factory ActiveOrderItem({required String name, required int quantity}) =
+      _ActiveOrderItem;
 }
 
 @freezed

@@ -50,6 +50,14 @@ describePostgres('order review PostgreSQL integration', () => {
                 'utf8',
             );
             await client.query(migration);
+            const paymentMigration = fs.readFileSync(
+                path.resolve(
+                    __dirname,
+                    '../../../prisma/migrations/20260915000000_add_order_payment_intent/migration.sql',
+                ),
+                'utf8',
+            );
+            await client.query(paymentMigration);
             await client.query(`
                 INSERT INTO "Restaurant" ("id") VALUES ('restaurant-1'), ('restaurant-2');
                 INSERT INTO "Order" ("id", "customerId", "restaurantId") VALUES
@@ -109,6 +117,15 @@ describePostgres('order review PostgreSQL integration', () => {
         expect(attempts.filter((attempt) => attempt.status === 'fulfilled')).toHaveLength(1);
         const rejected = attempts.find((attempt) => attempt.status === 'rejected') as PromiseRejectedResult;
         expect(rejected.reason).toMatchObject({ code: '23505' });
+    });
+
+    it('prevents a PaymentIntent from being bound to more than one order', async () => {
+        await queryInSchema(
+            `UPDATE "Order" SET "paymentIntentId" = 'pi_unique' WHERE "id" = 'order-1'`,
+        );
+        await expect(queryInSchema(
+            `UPDATE "Order" SET "paymentIntentId" = 'pi_unique' WHERE "id" = 'order-2'`,
+        )).rejects.toMatchObject({ code: '23505' });
     });
 
     it('prevents changing attribution after an order is reviewed', async () => {
