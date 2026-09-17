@@ -1,10 +1,9 @@
 import { getMenu, addMenuItem, updateMenuItem, deleteMenuItem } from '../menu.controller';
-import { PrismaClient } from '@prisma/client';
 import { AppError } from '../../utils/AppError';
 
 // Mock dependencies
-jest.mock('@prisma/client', () => {
-    const mPrismaClient = {
+jest.mock('../../utils/prisma', () => ({
+    prisma: {
         restaurant: {
             findUnique: jest.fn(),
         },
@@ -15,9 +14,10 @@ jest.mock('@prisma/client', () => {
             update: jest.fn(),
             delete: jest.fn(),
         },
-    };
-    return { PrismaClient: jest.fn(() => mPrismaClient) };
-});
+    },
+}));
+
+import { prisma as sharedPrisma } from '../../utils/prisma';
 
 describe('Menu Controller', () => {
     let prisma: any;
@@ -25,7 +25,7 @@ describe('Menu Controller', () => {
     let res: any;
 
     beforeEach(() => {
-        prisma = new PrismaClient();
+        prisma = sharedPrisma;
         req = {
             params: { restaurantId: 'rest-1', menuItemId: 'item-1' },
             body: {},

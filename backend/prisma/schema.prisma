@@ -110,6 +110,8 @@ model Restaurant {
   orders    Order[]
   carts     Cart[]
   reviews   Review[]
+
+  @@index([ownerId])
 }
 
 model MenuItem {
@@ -124,6 +126,8 @@ model MenuItem {
   restaurant Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
   cartItems  CartItem[]
+
+  @@index([restaurantId])
 }
 
 // -------------------------------------------------------------------------
@@ -146,6 +150,9 @@ model Order {
   orderItems OrderItem[]
   delivery   Delivery?
   review     Review?
+
+  @@index([customerId, createdAt(sort: Desc)])
+  @@index([restaurantId, createdAt(sort: Desc)])
 }
 
 model OrderItem {
@@ -157,6 +164,8 @@ model OrderItem {
 
   order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@index([orderId])
 }
 
 // -------------------------------------------------------------------------
@@ -183,6 +192,8 @@ model CartItem {
 
   cart     Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
   menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@index([cartId])
 }
 
 model Delivery {
@@ -196,6 +207,8 @@ model Delivery {
 
   order  Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   driver DriverProfile @relation(fields: [driverId], references: [id])
+
+  @@index([driverId, status])
 }
 
 model Review {

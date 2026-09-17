@@ -1,9 +1,7 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../types/auth.types';
 import { AppError } from '../utils/AppError';
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/prisma';
 
 // HELPER: Verify Restaurant Ownership
 const verifyRestaurantOwnership = async (restaurantId: string, userId: string) => {

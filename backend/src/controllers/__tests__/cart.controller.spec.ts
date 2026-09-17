@@ -5,11 +5,10 @@ import {
     removeCartItem,
     clearCart,
 } from '../cart.controller';
-import { PrismaClient } from '@prisma/client';
 import { AppError } from '../../utils/AppError';
 
-jest.mock('@prisma/client', () => {
-    const mPrismaClient = {
+jest.mock('../../utils/prisma', () => ({
+    prisma: {
         customerProfile: { findUnique: jest.fn() },
         cart: {
             findUnique: jest.fn(),
@@ -27,9 +26,10 @@ jest.mock('@prisma/client', () => {
         },
         menuItem: { findUnique: jest.fn() },
         $transaction: jest.fn(),
-    };
-    return { PrismaClient: jest.fn(() => mPrismaClient) };
-});
+    },
+}));
+
+import { prisma as sharedPrisma } from '../../utils/prisma';
 
 const CUSTOMER_USER_ID = 'user-1';
 const CUSTOMER_PROFILE_ID = 'profile-1';
@@ -52,7 +52,7 @@ describe('Cart Controller', () => {
     let res: any;
 
     beforeEach(() => {
-        prisma = new PrismaClient();
+        prisma = sharedPrisma;
         req = {
             params: {},
             body: {},
