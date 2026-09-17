@@ -1,172 +1,149 @@
 # Uber Eats Clone Project Status Report
 
-Current assessment as of September 15, 2026.
+Current assessment as of September 17, 2026.
 
 ## Executive Summary
 
-The project has a substantial working feature set, but it is not ready for release.
+The portfolio-scale product flow and Phase 8 QA/polish implementation are complete. The project is functionally close to an MVP, but it is not production-ready because deployment, production infrastructure, store metadata, signed builds, and submissions remain outstanding.
 
-| Measure | Estimated completion |
+| Measure | Current status |
 | --- | ---: |
-| GitHub roadmap | 34 of 38 issues closed — **89%** |
-| Core product functionality | **Approximately 75–80%** |
-| Production and release readiness | **Approximately 50–60%** |
+| GitHub roadmap | 35 of 38 issues closed — **92%** |
+| Core product functionality | **Approximately 90–95%** |
+| Production and release readiness | **Approximately 65–70%** |
 
-The difference exists because several closed roadmap issues are only partially implemented, while all four Phase 8 issues remain open in **Ready**:
+Phase 8 status:
 
-- [Issue 35: QA testing and UI polish](https://github.com/ktul15/uber_eats_clone/issues/35)
-- [Issue 36: Backend deployment and database scaling](https://github.com/ktul15/uber_eats_clone/issues/36)
-- [Issue 37: Store metadata](https://github.com/ktul15/uber_eats_clone/issues/37)
-- [Issue 38: Production builds and submissions](https://github.com/ktul15/uber_eats_clone/issues/38)
+- [Issue 35: QA testing and UI polish](https://github.com/ktul15/uber_eats_clone/issues/35) — **Completed**
+- [Issue 36: Backend deployment and database scaling](https://github.com/ktul15/uber_eats_clone/issues/36) — **Open**
+- [Issue 37: Store metadata](https://github.com/ktul15/uber_eats_clone/issues/37) — **Open**
+- [Issue 38: Production builds and submissions](https://github.com/ktul15/uber_eats_clone/issues/38) — **Open**
 
-## Implemented Scope
+Issue 35 was implemented on `feature/35-qa-testing-ui-polish`, merged into `dev` as `7abba73`, pushed, closed, and moved to **Done**. The `dev` branch matches `origin/dev`.
 
-The codebase contains the main portfolio-scale product flow:
+## Completed Scope
 
-- Authentication and role-based customer, owner, and driver apps.
-- Profile management.
-- Restaurant browsing and menu management.
-- Cart and checkout screens.
-- Order placement and status management.
-- Socket.IO-based restaurant and driver events.
-- Driver assignment and delivery-status progression.
-- Driver location transmission and customer tracking.
-- Google Maps route drawing and ETA.
-- Customer and driver FCM infrastructure.
-- Customer and restaurant order history.
-- Customer ratings and reviews.
-- PostgreSQL constraints and concurrency tests for reviews.
+The repository now contains the main end-to-end product journey:
 
-The `dev` branch currently matches `origin/dev`; there are no unpushed commits.
+- JWT authentication, role authorization, and profile management for customers, owners, and drivers.
+- Restaurant discovery, menu management, restaurant creation, and multi-restaurant owner support.
+- Cart management and Stripe Payment Sheet checkout.
+- Server-authoritative PaymentIntent validation for customer, cart, restaurant, amount, currency, cart contents, and one-time use.
+- Idempotent order placement and persisted checkout recovery.
+- Explicit and atomic order/delivery status transitions.
+- Driver online/offline controls, fresh pre-assignment location, 10 km proximity enforcement, and one-active-delivery database protection.
+- Socket.IO authentication, ownership-checked room joins, reconnect handling, and customer delivery-state rehydration.
+- Driver location transmission, customer live tracking, route drawing, and ETA.
+- FCM token registration/removal and notification support across all three Flutter apps.
+- Customer and restaurant order history, ratings, and reviews.
+- Secure upload filenames, image signature validation, rejected-file cleanup, and `nosniff` static responses.
+- PostgreSQL migrations and concurrency coverage for reviews, PaymentIntent reuse, lifecycle transitions, and driver assignment.
+- Active backend and Flutter GitHub Actions definitions for `dev` and `main`.
+- Updated developer testing and release QA runbooks.
+
+OTP/email verification is explicitly outside the current release scope. Registration continues to issue a JWT immediately. Local disk uploads remain suitable for development only and must be externalized or made durable for horizontally scaled production deployment.
 
 ## Current Validation Health
 
-The following checks were run during this assessment:
+The final issue-35 validation baseline is:
 
 | Component | Result | Detail |
 | --- | --- | --- |
-| Backend TypeScript build | Pass | Passes after running `npx prisma generate` |
-| Backend unit tests | Pass | 99 tests passed |
-| Backend PostgreSQL integration tests | Not validated | Five tests require a reachable dedicated database |
-| Customer app tests | Pass | Eight tests passed |
-| Customer app analysis | Finding | One `avoid_print` finding |
-| Restaurant dashboard tests | Pass | One smoke test passed |
-| Restaurant dashboard analysis | Pass | No findings |
-| Driver app tests | Fail | Missing `ProviderScope` and obsolete expected text |
-| Driver app analysis | Finding | One `avoid_print` finding |
+| Backend TypeScript build | Pass | Strict compilation succeeds |
+| Prisma validation | Pass | Schema is valid |
+| Migration deployment | Pass | Five migrations apply cleanly to a fresh PostgreSQL database |
+| Backend tests | Pass | 138 tests, including 8 PostgreSQL integration tests |
+| Customer app | Pass | Clean analysis and 15 passing tests |
+| Restaurant dashboard | Pass | Clean analysis and 4 passing tests |
+| Driver app | Pass | Clean analysis and 6 passing tests |
+| Generated Dart files | Pass | Build Runner completes without unresolved conflicts |
+| Formatting/diff hygiene | Pass | Dart formatting and `git diff --check` pass |
+| Senior code review | Pass | Final mandatory review reported zero findings |
+| GitHub Actions execution | Partial | Backend CI passes; Flutter CI exposed an incompatible SDK pin, now aligned to Flutter 3.41.2 / Dart 3.11.0 pending rerun |
 
-Test coverage remains thin outside the backend and customer review screen. The restaurant and driver apps each have only one smoke test.
+The production dependency audit currently reports **6 vulnerabilities**: 4 high and 2 moderate. They are transitive findings through Prisma tooling and Firebase/gaxios dependencies. npm's proposed complete fix downgrades Prisma from 7 to 6, so it must not be applied automatically. Re-evaluate these during issue 36 against compatible upstream releases and the actual production dependency graph.
 
-The backend production dependency audit currently reports:
+Automated coverage is materially improved, but it does not replace physical-device and external-service testing.
 
-- 37 vulnerabilities.
-- 1 critical vulnerability.
-- 19 high-severity vulnerabilities.
-- 15 moderate-severity vulnerabilities.
-- 2 low-severity vulnerabilities.
+## Pending Work
 
-Directly affected dependencies include `multer`, `firebase-admin`, and Prisma-related tooling. These require controlled upgrades and regression testing rather than an automatic forced audit fix.
+### 1. Issue 36 — Backend Deployment and Database Scaling
 
-## Major Pending Work
+This is the immediate next implementation milestone:
 
-### 1 Complete the Payment Path
+- Select backend hosting and managed PostgreSQL.
+- Add deployment artifacts, health/readiness behavior, and a repeatable migration release process.
+- Replace local uploads with durable object storage or explicitly mounted persistent storage.
+- Configure HTTPS, production CORS, trusted proxies, secrets, environment validation, and production API/Socket.IO URLs.
+- Add structured logging, error reporting, monitoring, backups, and restore verification.
+- Define the Socket.IO horizontal-scaling strategy, including sticky sessions and a shared adapter where required.
+- Validate connection limits, pooling, indexes, migrations, and recovery procedures.
+- Reassess the six dependency advisories and document accepted upstream limitations.
+- Obtain a green Flutter CI rerun after aligning its SDK with the apps' Dart 3.11 requirement.
 
-This is the largest broken customer journey.
+### 2. External-Service and Real-Device Release QA
 
-- The customer app creates a Stripe PaymentIntent but does not collect or confirm a payment method.
-- The UI contains an explicit `flutter_stripe` TODO.
-- The backend requires the PaymentIntent to be `succeeded`, so normal UI checkout cannot complete.
-- Order placement does not fully verify that the intent belongs to the customer and cart, matches the amount and currency, or has not already been consumed.
-- Declines, cancellations, retries, and idempotency are not handled.
+The automated suite is green, but these scenarios require configured test services and suitable devices:
 
-### 2 Repair Real Time Room Behavior
+- Stripe success, decline, cancellation, retry, restart, and network-loss scenarios.
+- Firebase foreground, background, terminated, permission-denied, token-refresh, stale-token, and account-switch scenarios for all roles.
+- Google Maps/Directions failure handling, route correctness, ETA plausibility, and quota behavior.
+- Android/iOS location permissions, background behavior, battery usage, and reconnect behavior.
+- The complete customer → restaurant → driver lifecycle under real disconnects and racing actions.
+- Accessibility, screen-size, theme, slow-network, and offline UI checks.
 
-The Socket.IO implementation has correctness and authorization problems:
+Record evidence against [`QA_GUIDE.md`](QA_GUIDE.md). Do not use production credentials for QA.
 
-- The server expects a list of rooms, while restaurant and driver clients send a string.
-- Customer tracking does not join the required customer room.
-- Owners can request arbitrary `restaurant:*` rooms without ownership verification.
-- The restaurant dashboard joins only the first owned restaurant.
-- Reconnection and event delivery lack automated coverage.
+### 3. Issue 37 — App Store and Play Store Metadata
 
-### 3 Add a Usable Driver Availability Flow
+Pending release assets and information include:
 
-- New drivers default to unavailable.
-- There is no API or UI for going online or offline.
-- Drivers do not publish location before assignment.
-- Nearby-driver selection currently permits missing coordinates.
-- Assignment races and reconnect recovery need end-to-end verification.
+- Final application names, package/bundle identifiers, descriptions, categories, keywords, and support links.
+- Production icons, splash assets, screenshots, preview media, and localized copy.
+- Privacy policy, data-safety disclosures, tracking declarations, age ratings, and permission explanations.
+- Replacement of remaining development-oriented labels and package descriptions.
 
-### 4 Finish Restaurant Onboarding and Notifications
+### 4. Issue 38 — Production Builds and Submission
 
-- The backend supports restaurant creation, but the dashboard has no creation UI.
-- The restaurant dashboard does not register an FCM token.
-- Owner push notifications therefore cannot work end to end.
+Pending submission work includes:
 
-### 5 Resolve Closed Issue Scope Mismatches
+- Production Firebase, Maps, Stripe, API, and Socket.IO configuration.
+- Android signing, shrinking/obfuscation review, and App Bundle generation.
+- iOS certificates, provisioning profiles, entitlements, archive generation, and TestFlight validation.
+- Release-candidate testing against the deployed backend.
+- Store upload, review responses, rollout planning, monitoring, and rollback preparation.
 
-Several completed roadmap entries do not fully meet their original wording:
+### 5. Main-Branch Release Promotion
 
-- OTP or email verification was never implemented.
-- Cloud image storage currently uses local Multer disk storage under `uploads/`, which is unsuitable for ephemeral or horizontally scaled deployment.
-- Payment integration is only partially implemented.
-- Real-time order infrastructure exists, but its room contract is broken.
-
-These features should either be completed or explicitly removed from the release scope.
-
-### 6 Establish a Green Engineering Baseline
-
-- Fix the driver smoke test.
-- Remove the two Flutter analysis findings.
-- Add feature-level restaurant and driver tests.
-- Run the five PostgreSQL integration tests against a dedicated database.
-- Activate GitHub Actions. The current workflows have no active build or test commands and still reference `master` instead of `main`.
-- Review and remediate dependency vulnerabilities.
-- Add Socket.IO integration and authorization tests.
-
-### 7 Complete Deployment and Release Work
-
-There are currently no backend deployment manifests, Dockerfiles, or store automation files.
-
-Pending release work includes:
-
-- Managed PostgreSQL and backend hosting.
-- Durable object and image storage.
-- HTTPS, production CORS, secrets, logging, migrations, and monitoring.
-- A Socket.IO scaling strategy.
-- Production API configuration instead of hard-coded `localhost` URLs.
-- Signing credentials and production Firebase and Maps configuration.
-- Final application names, descriptions, icons, screenshots, privacy disclosures, and permission text.
-- Android App Bundle and iOS archive generation.
-- Store submission and review.
-
-The Flutter package descriptions and Android display labels are still starter-style values such as `A new Flutter project`, `customer_app`, and `driver_app`.
+Issue-35 work is on `dev`. Continue following the required hierarchy: feature branches merge into `dev`; `main` is updated only by merging a validated, release-ready `dev` after the remaining Phase 8 work is complete.
 
 ## Immediate Next Steps
 
-1. **Start issue 35.** Create `feature/35-qa-testing-ui-polish` from an up-to-date `dev` branch and move the project card to **In Progress**.
-2. **Make the automated baseline green.** Fix the driver test and lints, provision a test database, pass all backend tests, enable CI, and triage dependency findings.
-3. **Repair the complete order lifecycle.** Implement Stripe confirmation first, then fix Socket.IO rooms, driver availability and location, restaurant creation, and restaurant FCM registration.
-4. **Run the complete customer to restaurant to driver regression.** Verify payment, order events, assignment races, pickup, live location, delivery, notifications, history, and reviews using test service credentials and appropriate devices.
-5. **Close issue 35 only after its release criteria pass.** The detailed checklist is in [`QA_GUIDE.md`](QA_GUIDE.md).
-6. **Complete the release sequence.** Proceed through issues 36, 37, and 38 in order.
+1. **Confirm Flutter CI is green.** Backend CI now passes; rerun Flutter CI with Flutter 3.41.2 and retain the completed run as release evidence.
+2. **Start issue 36.** Move its project card to **In Progress**, update local `dev`, and create `feature/36-backend-deployment-scaling`.
+3. **Choose the production architecture.** Decide hosting, managed PostgreSQL, durable uploads, secrets management, monitoring, and Socket.IO scaling before writing deployment files.
+4. **Create a staging environment.** Deploy the backend/database, run migrations from scratch, seed controlled QA accounts, and align REST/Socket.IO URLs across the apps.
+5. **Run real-service/device QA.** Execute the Stripe, Firebase, Maps, permissions, reconnect, and complete lifecycle scenarios.
+6. **Complete issue 37.** Prepare store identity, privacy disclosures, screenshots, descriptions, and support/legal URLs.
+7. **Complete issue 38.** Produce signed release candidates, validate them, submit, and document rollout/rollback procedures.
+8. **Promote `dev` to `main` only after release gates pass.** Do not bypass the remaining Phase 8 checks.
 
-## Completion Gate
+## Release Gate
 
-The project can move toward deployment only after:
+Before production release:
 
-- The backend build, unit tests, and integration tests pass.
-- All three Flutter apps have clean analysis and passing tests.
-- Customer payment is confirmed through Stripe before order creation.
-- Socket room joins use a consistent payload and enforce ownership.
-- Socket reconnection is verified.
-- Drivers can intentionally go online or offline and publish location before assignment.
-- FCM works in foreground, background, and terminated states.
-- Maps route and ETA behavior are verified.
-- Migrations pass against a clean database.
-- No blocker or high-severity defect remains.
-- No secrets are tracked.
+- GitHub Actions must execute successfully; workflow definitions alone are insufficient.
+- Staging deployment, migrations, backups, restore, health checks, logs, and monitoring must be verified.
+- Production storage must not depend on ephemeral local uploads.
+- Stripe, Firebase, Maps, Socket.IO, and location behavior must pass real-service/device QA.
+- Production URLs, CORS, secrets, signing, and Firebase/Maps configuration must be correct.
+- Dependency advisories must be fixed, mitigated, or explicitly accepted with rationale.
+- Store metadata, privacy/data-safety disclosures, and signed Android/iOS builds must be complete.
+- No blocker or high-severity product defect may remain.
+- No secrets or machine-specific configuration may be committed.
 
 ## Overall Assessment
 
-The project is a strong feature-rich prototype, but the checkout and real-time delivery journeys still require repair before it can be considered a complete MVP. After those functional gaps, substantial QA, security, deployment, and store-release work remains.
+Issue 35 moved the project from a feature-rich but internally inconsistent prototype to a substantially validated MVP implementation. Checkout, real-time delivery, driver availability, restaurant onboarding, notifications, lifecycle concurrency, uploads, and automated coverage are now coherent.
+
+The critical path is no longer core application repair. It is operational readiness: issue 36 deployment/scaling, real external-service and device QA, issue 37 store preparation, and issue 38 signed production builds and submissions.
