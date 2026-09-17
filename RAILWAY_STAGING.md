@@ -31,14 +31,18 @@ to that branch starts an automatic deployment.
 6. In the PostgreSQL service's **Backups** tab, enable daily scheduled backups
    when the workspace plan supports them (see **Current account limitations**).
 
-Railway variables can reference another service or a Railway-provided value, so
-prefer references over copied credentials. Set these backend variables and seal
-the secret values:
+Railway variables can reference another service or a Railway-provided value.
+The staging backend currently stores `DATABASE_URL` as a sealed service-local
+value because Railway pre-deploy containers repeatedly received stale
+authentication through the cross-service reference. Copy the current sealed
+`Postgres.DATABASE_URL` value without exposing it, and update both services
+together whenever the database password is rotated. Use references for the
+remaining Railway-provided values:
 
 ```dotenv
 APP_ENV=staging
 NODE_ENV=production
-DATABASE_URL=${{Postgres.DATABASE_URL}}
+DATABASE_URL=<current sealed Postgres.DATABASE_URL>
 JWT_SECRET=<at-least-32-random-bytes>
 BASE_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
 ALLOWED_ORIGINS=https://<each-approved-web-origin-comma-separated>
@@ -50,6 +54,23 @@ DATABASE_IDLE_TIMEOUT_MS=30000
 TRUST_PROXY_HOPS=1
 RAILWAY_DEPLOYMENT_DRAINING_SECONDS=30
 ```
+
+Because the database URL is duplicated, rotate it as one maintenance operation:
+
+1. Pause backend traffic and retain the previous sealed values until validation
+   completes. Generate a URL-safe random password (for example, 32 random bytes
+   encoded as hexadecimal); never place it in the repository or issue comments.
+2. Use `railway ssh -s Postgres -e staging` and local peer-authenticated `psql`
+   to change the actual `postgres` role password. Updating Railway variables
+   alone does not change the password stored by PostgreSQL.
+3. Update the Postgres service's sealed `PGPASSWORD` and `DATABASE_URL`, then
+   replace the backend service's sealed `DATABASE_URL` with that same URL. Keep
+   the username, private hostname, port, and database name unchanged.
+4. Start a new backend source deployment. Confirm `prisma migrate deploy`
+   succeeds, the deployment becomes healthy, and `/health` returns HTTP 200.
+5. If validation fails, restore the previous role password and all three sealed
+   variables before redeploying. Resume traffic only after the old or new set is
+   consistent end-to-end.
 
 Native iOS and Android calls, including Socket.IO connections, are accepted
 without an `Origin` header. Browser and Flutter Web origins must be listed
