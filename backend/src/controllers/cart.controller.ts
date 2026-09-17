@@ -1,9 +1,7 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../types/auth.types';
 import { AppError } from '../utils/AppError';
-
-const prisma = new PrismaClient();
+import { prisma } from '../utils/prisma';
 
 // HELPER: resolve CustomerProfile.id from JWT userId
 const getCustomerProfileId = async (userId: string): Promise<string> => {

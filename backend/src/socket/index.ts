@@ -3,13 +3,20 @@ import { Server as HttpServer } from 'http';
 import { verifySocketToken } from './socket.auth';
 import { rooms } from './rooms';
 import { prisma } from '../utils/prisma';
+import { isOriginAllowed } from '../config/cors';
 
 let io: Server | null = null;
 
 export function initSocket(httpServer: HttpServer): Server {
     io = new Server(httpServer, {
         cors: {
-            origin: process.env.CLIENT_URL ?? 'http://localhost:3000',
+            origin: (origin, callback) => {
+                if (isOriginAllowed(origin)) {
+                    callback(null, true);
+                    return;
+                }
+                callback(new Error('Origin is not allowed by CORS'), false);
+            },
             methods: ['GET', 'POST'],
             credentials: true,
         },

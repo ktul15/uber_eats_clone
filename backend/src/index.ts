@@ -1,59 +1,69 @@
-import express, { Request, Response } from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
+import 'dotenv/config';
+
 import { createServer } from 'http';
-import { errorHandler } from './middlewares/error.middleware';
-import { initSocket } from './socket/index';
-
-dotenv.config();
-
+import { validateRuntimeEnvironment } from './config/environment';
 import { initFirebase } from './utils/firebase';
-initFirebase();
+import { ensureUploadDirectory } from './utils/uploads';
 
-const app = express();
-const port = process.env.PORT || 8000;
+export async function startServer(): Promise<void> {
+    validateRuntimeEnvironment();
+    await ensureUploadDirectory();
+    initFirebase();
 
-import authRoutes from './routes/auth.routes';
-import userRoutes from './routes/user.routes';
-import restaurantRoutes from './routes/restaurant.routes';
-import menuRoutes from './routes/menu.routes';
-import uploadRoutes from './routes/upload.routes';
-import cartRoutes from './routes/cart.routes';
-import orderRoutes from './routes/order.routes';
-import deliveryRoutes from './routes/delivery.routes';
-import path from 'path';
+    // Load modules that initialize external clients only after configuration
+    // validation has produced an actionable startup error.
+    const [{ createApp }, { initSocket }, { shutdownServer }] = await Promise.all([
+        import('./app'),
+        import('./socket'),
+        import('./server'),
+    ]);
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+    const app = createApp();
+    const httpServer = createServer(app);
+    const socketServer = initSocket(httpServer);
+    const port = Number(process.env.PORT ?? 8000);
+    let shuttingDown = false;
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/restaurants', restaurantRoutes);
-app.use('/api/upload', uploadRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/deliveries', deliveryRoutes);
+    const shutdown = async (signal: NodeJS.Signals) => {
+        if (shuttingDown) return;
+        shuttingDown = true;
+        console.info(JSON.stringify({ event: 'server.shutdown_started', signal }));
+        try {
+            await shutdownServer({ httpServer, socketServer });
+            console.info(JSON.stringify({ event: 'server.shutdown_complete', signal }));
+            process.exitCode = 0;
+        } catch (error) {
+            console.error(JSON.stringify({
+                event: 'server.shutdown_failed',
+                signal,
+                message: error instanceof Error ? error.message : 'Unknown shutdown error',
+            }));
+            // Cleanup has attempted every resource within a bounded deadline.
+            // Exit explicitly because a timed-out transport may still hold an
+            // active event-loop handle and Railway will otherwise send SIGKILL.
+            process.exit(1);
+        }
+    };
 
-// We mount menuRoutes under a specific restaurant ID route
-app.use('/api/restaurants/:restaurantId/menu', menuRoutes);
+    process.once('SIGTERM', () => void shutdown('SIGTERM'));
+    process.once('SIGINT', () => void shutdown('SIGINT'));
 
-// Serve static uploaded files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
-  setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
-}));
+    httpServer.listen(port, () => {
+        console.info(JSON.stringify({
+            event: 'server.started',
+            port,
+            railwayReplicaId: process.env.RAILWAY_REPLICA_ID,
+            railwayRegion: process.env.RAILWAY_REPLICA_REGION,
+        }));
+    });
+}
 
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ success: true, data: { status: 'ok', message: 'Uber Eats Clone API is healthy' } });
-});
-
-// Global Error Handler (must be LAST)
-app.use(errorHandler);
-
-const httpServer = createServer(app);
-initSocket(httpServer);
-
-httpServer.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+if (require.main === module) {
+    void startServer().catch((error: unknown) => {
+        console.error(JSON.stringify({
+            event: 'server.startup_failed',
+            message: error instanceof Error ? error.message : 'Unknown startup error',
+        }));
+        process.exitCode = 1;
+    });
+}

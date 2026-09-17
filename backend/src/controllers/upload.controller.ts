@@ -4,10 +4,11 @@ import multer from 'multer';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
+import { getUploadDirectory } from '../utils/uploads';
 
 // Set Storage Engine
 const storage = multer.diskStorage({
-    destination: './uploads/',
+    destination: (_req, _file, cb) => cb(null, getUploadDirectory()),
     filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
         cb(null, safeUploadFilename(file.mimetype));
     }
